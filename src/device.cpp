@@ -43,13 +43,13 @@ namespace keywave {
             int m_fd = -1;
         };
 
-        [[nodiscard]] bool hasButtonLeft(int fd) {
+        [[nodiscard]] bool hasKeyCode(int fd, int keyCode) {
             std::array<unsigned long, kKeyBitsWords> keybits{};
             if (ioctl(fd, EVIOCGBIT(EV_KEY, sizeof(keybits)), keybits.data()) < 0) {
                 return false;
             }
-            const std::size_t idx = BTN_LEFT / kBitsPerLong;
-            const std::size_t bit = BTN_LEFT % kBitsPerLong;
+            const std::size_t idx = static_cast<std::size_t>(keyCode) / kBitsPerLong;
+            const std::size_t bit = static_cast<std::size_t>(keyCode) % kBitsPerLong;
             return (keybits[idx] >> bit) & 1UL;
         }
 
@@ -61,7 +61,7 @@ namespace keywave {
 
     } // namespace
 
-    std::optional<std::filesystem::path> findMouseDevice() {
+    std::optional<std::filesystem::path> findInputDevice(int requiredKeyCode) {
         namespace fs = std::filesystem;
 
         std::error_code ec;
@@ -73,19 +73,14 @@ namespace keywave {
         for (const auto& entry : fs::directory_iterator("/dev/input", ec)) {
             const std::string filename = entry.path().filename().string();
             if (filename.rfind("event", 0) != 0)
-                continue;
+                continue; // not an eventN node
 
             UniqueFd fd(open(entry.path().c_str(), O_RDONLY | O_NONBLOCK));
             if (!fd.valid())
-                continue;
+                continue; // often a permissions issue on other users' devices
 
-            if (hasButtonLeft(fd.get())) {
-                std::cout
-                    << "Found mouse-like device: "
-                    << deviceName(fd.get())
-                    << " ("
-                    << entry.path().string()
-                    << ")\n";
+            if (hasKeyCode(fd.get(), requiredKeyCode)) {
+                std::cout << "Found device: " << deviceName(fd.get()) << " (" << entry.path().string() << ")\n";
                 return entry.path();
             }
         }
@@ -95,5 +90,9 @@ namespace keywave {
         }
         return std::nullopt;
     }
+
+    std::optional<std::filesystem::path> findMouseDevice() { return findInputDevice(BTN_LEFT); }
+
+    std::optional<std::filesystem::path> findKeyboardDevice() { return findInputDevice(KEY_A); }
 
 } // namespace keywave
