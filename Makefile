@@ -12,7 +12,13 @@ SRCS = src/audio.cpp \
 OBJS = $(SRCS:.cpp=.o)
 
 TARGET = keywave
-TEST_TARGET = test_keywave
+TEST_TARGET  = test_keywave
+TEST_SRCS    = tests/test_main.cpp \
+               tests/test_config.cpp \
+               tests/test_soundpack.cpp \
+               tests/test_audio.cpp \
+               tests/test_device.cpp
+TEST_OBJS    = $(TEST_SRCS:.cpp=.o)
 
 PREFIX   ?= /usr
 BINDIR   ?= $(PREFIX)/bin
@@ -25,7 +31,7 @@ all: $(TARGET)
 $(TARGET): $(OBJS) src/main.o
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
-$(TEST_TARGET): $(OBJS) tests/test_main.o
+$(TEST_TARGET): $(OBJS) $(TEST_OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
 test: $(TEST_TARGET)
@@ -35,7 +41,7 @@ test: $(TEST_TARGET)
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
 clean:
-	rm -f src/*.o tests/*.o *.o $(TARGET) $(TEST_TARGET)
+	rm -f src/*.o tests/*.o $(TARGET) $(TEST_TARGET)
 
 install: $(TARGET)
 	install -D -m 755 $(TARGET) $(DESTDIR)$(BINDIR)/$(TARGET)
