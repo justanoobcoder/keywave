@@ -4,6 +4,8 @@ A lightweight, low-latency background daemon that plays mechanical keyboard and 
 
 Works globally across both **Wayland** and **X11** by reading directly from the Linux `evdev` subsystem.
 
+https://github.com/user-attachments/assets/cbcb4e61-77f1-4eb9-a326-ee1b4ed5eb67
+
 ---
 
 ## Features
