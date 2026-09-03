@@ -16,6 +16,8 @@ bool test_loadConfigFile_valid() {
         "keywave_test_valid.conf",
         "# Test comment\n"
         "volume = 0.65\n"
+        "keyboard_volume = 0.8\n"
+        "mouse_volume = 0.4\n"
         "keyboard_pack = /tmp/custom_keyboard\n"
         "mouse_sound = /tmp/custom_mouse.mp3\n"
         "keyboard_device = Custom Keyboard Device\n"
@@ -25,6 +27,10 @@ bool test_loadConfigFile_valid() {
     const auto loaded = keywave::loadConfigFile(conf.path);
     TEST_ASSERT(loaded.has_value());
     TEST_ASSERT(loaded->volume >= 0.64F && loaded->volume <= 0.66F);
+    TEST_ASSERT(
+        loaded->keyboardVolume.has_value() && *loaded->keyboardVolume >= 0.79F && *loaded->keyboardVolume <= 0.81F
+    );
+    TEST_ASSERT(loaded->mouseVolume.has_value() && *loaded->mouseVolume >= 0.39F && *loaded->mouseVolume <= 0.41F);
     TEST_ASSERT(loaded->keyboardPack == "/tmp/custom_keyboard");
     TEST_ASSERT(loaded->mouseSound == "/tmp/custom_mouse.mp3");
     TEST_ASSERT(loaded->keyboardDevice == "Custom Keyboard Device");
@@ -72,9 +78,11 @@ bool test_parseConfig_cliOverrides() {
     );
 
     std::string confStr = conf.path.string();
-    std::vector<std::string> args = {"keywave",       "-c", confStr,          "-v", "0.9",          "-k",
-                                     "/cli/keyboard", "-m", "/cli/mouse.wav", "-K", "New Keyboard", "-M",
-                                     "New Mouse"};
+    std::vector<std::string> args = {
+        "keywave",        "-c",          confStr,        "-v", "0.9",           "--keyboard-vol",
+        "0.75",           "--mouse-vol", "0.35",         "-k", "/cli/keyboard", "-m",
+        "/cli/mouse.wav", "-K",          "New Keyboard", "-M", "New Mouse"
+    };
 
     std::vector<char*> argv;
     argv.reserve(args.size());
@@ -84,6 +92,14 @@ bool test_parseConfig_cliOverrides() {
     const auto res = keywave::parseConfig(static_cast<int>(argv.size()), argv.data());
     TEST_ASSERT(res.status == keywave::ParseStatus::Success);
     TEST_ASSERT(res.config.volume >= 0.89F && res.config.volume <= 0.91F);
+    TEST_ASSERT(
+        res.config.keyboardVolume.has_value()
+        && *res.config.keyboardVolume >= 0.74F
+        && *res.config.keyboardVolume <= 0.76F
+    );
+    TEST_ASSERT(
+        res.config.mouseVolume.has_value() && *res.config.mouseVolume >= 0.34F && *res.config.mouseVolume <= 0.36F
+    );
     TEST_ASSERT(res.config.keyboardPack == "/cli/keyboard");
     TEST_ASSERT(res.config.mouseSound == "/cli/mouse.wav");
     TEST_ASSERT(res.config.keyboardDevice == "New Keyboard");

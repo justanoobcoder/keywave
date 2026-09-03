@@ -11,10 +11,14 @@ namespace keywave {
 
     struct AudioEngine::Impl {
         ma_engine engine{};
+        ma_sound_group keyboardGroup{};
+        ma_sound_group mouseGroup{};
         bool ready{false};
 
         ~Impl() {
             if (ready) {
+                ma_sound_group_uninit(&mouseGroup);
+                ma_sound_group_uninit(&keyboardGroup);
                 ma_engine_uninit(&engine);
                 ready = false;
             }
@@ -34,12 +38,31 @@ namespace keywave {
         }
 
         ma_result result = ma_engine_init(nullptr, &m_impl->engine);
-        m_impl->ready = (result == MA_SUCCESS);
-        return m_impl->ready;
+        if (result != MA_SUCCESS) {
+            return false;
+        }
+
+        result = ma_sound_group_init(&m_impl->engine, 0, nullptr, &m_impl->keyboardGroup);
+        if (result != MA_SUCCESS) {
+            ma_engine_uninit(&m_impl->engine);
+            return false;
+        }
+
+        result = ma_sound_group_init(&m_impl->engine, 0, nullptr, &m_impl->mouseGroup);
+        if (result != MA_SUCCESS) {
+            ma_sound_group_uninit(&m_impl->keyboardGroup);
+            ma_engine_uninit(&m_impl->engine);
+            return false;
+        }
+
+        m_impl->ready = true;
+        return true;
     }
 
     void AudioEngine::shutdown() {
         if (m_impl->ready) {
+            ma_sound_group_uninit(&m_impl->mouseGroup);
+            ma_sound_group_uninit(&m_impl->keyboardGroup);
             ma_engine_uninit(&m_impl->engine);
             m_impl->ready = false;
         }
@@ -53,13 +76,24 @@ namespace keywave {
         }
     }
 
+    void AudioEngine::setChannelVolume(SoundChannel channel, float volume) {
+        if (!m_impl->ready) {
+            return;
+        }
+        if (channel == SoundChannel::Keyboard) {
+            ma_sound_group_set_volume(&m_impl->keyboardGroup, volume);
+        } else if (channel == SoundChannel::Mouse) {
+            ma_sound_group_set_volume(&m_impl->mouseGroup, volume);
+        }
+    }
+
     void AudioEngine::playClickTone(float frequencyHz, std::chrono::duration<float> duration) {
         (void)frequencyHz;
         (void)duration;
         std::cerr << "[AudioEngine] No playable sound available for this click.\n";
     }
 
-    void AudioEngine::playSound(std::string_view soundFile) {
+    void AudioEngine::playSound(std::string_view soundFile, SoundChannel channel) {
         if (!m_impl->ready) {
             return;
         }
@@ -72,7 +106,9 @@ namespace keywave {
             return;
         }
 
-        if (ma_engine_play_sound(&m_impl->engine, path.c_str(), nullptr) != MA_SUCCESS) {
+        ma_sound_group* group = (channel == SoundChannel::Keyboard) ? &m_impl->keyboardGroup : &m_impl->mouseGroup;
+
+        if (ma_engine_play_sound(&m_impl->engine, path.c_str(), group) != MA_SUCCESS) {
             std::cerr << "[AudioEngine] Failed to play sound: " << soundFile << "\n";
         }
     }

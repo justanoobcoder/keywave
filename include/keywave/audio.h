@@ -8,6 +8,8 @@ namespace keywave {
 
 using namespace std::chrono_literals;
 
+enum class SoundChannel { Keyboard, Mouse };
+
 class AudioEngine {
   public:
     AudioEngine();
@@ -24,11 +26,13 @@ class AudioEngine {
     [[nodiscard]] bool isReady() const noexcept;
 
     void setVolume(float volume);
+    void setChannelVolume(SoundChannel channel, float volume);
 
     void playClickTone(float frequencyHz = 1200.0F,
                        std::chrono::duration<float> duration = 30ms);
 
-    void playSound(std::string_view soundFile);
+    void playSound(std::string_view soundFile,
+                   SoundChannel channel = SoundChannel::Keyboard);
 
   private:
     struct Impl;

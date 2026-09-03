@@ -61,6 +61,10 @@ Keywave looks for a configuration file at `$XDG_CONFIG_HOME/keywave/keywave.conf
 # Master audio playback volume (float: 0.0 to 1.0)
 volume = 0.8
 
+# (Optional) Specific volume overrides for keyboard and mouse
+# keyboard_volume = 0.9
+# mouse_volume = 0.5
+
 # Path to keyboard soundpack folder (containing config.json)
 keyboard_pack = /path/to/keyboard/soundpack/folder
 
@@ -82,7 +86,9 @@ Usage: keywave [OPTIONS]
 
 Options:
   -c, --config <path>             Path to configuration file
-  -v, --volume <float>            Audio playback volume (e.g. 0.8 or 1.0)
+  -v, --volume <float>            Master audio playback volume (e.g. 0.8 or 1.0)
+      --keyboard-vol <float>      Keyboard audio playback volume override
+      --mouse-vol <float>         Mouse audio playback volume override
   -k, --keyboard-pack <path>      Path to keyboard soundpack directory
   -m, --mouse-sound <path>        Path to mouse sound audio file
   -K, --keyboard-dev <name|path>  Keyboard device name (or /dev/input path)

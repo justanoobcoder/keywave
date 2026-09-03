@@ -72,7 +72,7 @@ namespace {
             const ssize_t n = read(fd, &ev, sizeof(ev));
             if (n == static_cast<ssize_t>(sizeof(ev))) {
                 if (ev.type == EV_KEY && ev.value == 1) {
-                    audio.playSound(soundFile);
+                    audio.playSound(soundFile, keywave::SoundChannel::Mouse);
                 }
             } else {
                 usleep(1000);
@@ -97,7 +97,7 @@ namespace {
                 if (ev.type == EV_KEY && ev.value == 1) {
                     const auto soundPath = soundpack.soundFor(ev.code);
                     if (soundPath) {
-                        audio.playSound(soundPath->string());
+                        audio.playSound(soundPath->string(), keywave::SoundChannel::Keyboard);
                     }
                 }
             } else {
@@ -131,6 +131,12 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     audio.setVolume(config.volume);
+    if (config.keyboardVolume) {
+        audio.setChannelVolume(keywave::SoundChannel::Keyboard, *config.keyboardVolume);
+    }
+    if (config.mouseVolume) {
+        audio.setChannelVolume(keywave::SoundChannel::Mouse, *config.mouseVolume);
+    }
 
     const auto soundpack = keywave::SoundPack::load(config.keyboardPack);
     if (!soundpack) {
@@ -170,7 +176,14 @@ int main(int argc, char* argv[]) {
         keyboardThread = std::thread(listenAndPlayPerKey, *keyboard, std::cref(*soundpack), std::ref(audio));
     }
 
-    std::cout << "Keywave running with volume: " << config.volume << "\n";
+    std::cout << "Keywave running with master volume: " << config.volume;
+    if (config.keyboardVolume) {
+        std::cout << " (keyboard: " << *config.keyboardVolume << ")";
+    }
+    if (config.mouseVolume) {
+        std::cout << " (mouse: " << *config.mouseVolume << ")";
+    }
+    std::cout << "\n";
     std::cout << "Press Ctrl+C to quit.\n";
 
     if (mouseThread.joinable())

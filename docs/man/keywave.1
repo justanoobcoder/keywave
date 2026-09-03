@@ -5,6 +5,8 @@ keywave \- mechanical keyboard and mouse sound daemon for Linux
 .B keywave
 [\fB\-c\fR \fIconfig_file\fR]
 [\fB\-v\fR \fIvolume\fR]
+[\fB\-\-keyboard\-vol\fR \fIfloat\fR]
+[\fB\-\-mouse\-vol\fR \fIfloat\fR]
 [\fB\-k\fR \fIsoundpack_dir\fR]
 [\fB\-m\fR \fIsound_file\fR]
 [\fB\-K\fR \fIkeyboard_dev\fR]
@@ -25,8 +27,14 @@ Specify the path to a custom configuration file. If not provided,
 searches for \fI$XDG_CONFIG_HOME/keywave/keywave.conf\fR or \fI~/.config/keywave/keywave.conf\fR.
 .TP
 .BR \-v ", " \-\-volume " \fIfloat\fR"
-Set the audio playback volume. Must be a non-negative floating-point number (e.g. \fB0.8\fR, \fB1.0\fR).
+Set the master audio playback volume. Must be a non-negative floating-point number (e.g. \fB0.8\fR, \fB1.0\fR).
 Overrides the value in the configuration file.
+.TP
+.BR \-\-keyboard\-vol ", " \-\-keyboard\-volume " \fIfloat\fR"
+Set the keyboard audio playback volume override.
+.TP
+.BR \-\-mouse\-vol ", " \-\-mouse\-volume " \fIfloat\fR"
+Set the mouse audio playback volume override.
 .TP
 .BR \-k ", " \-\-keyboard\-pack " \fIpath\fR"
 Specify the directory of the keyboard soundpack. The directory must contain a valid \fBconfig.json\fR file.

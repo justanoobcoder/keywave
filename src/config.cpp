@@ -120,6 +120,32 @@ namespace keywave {
                         << path.string()
                         << "\n";
                 }
+            } else if (key == "keyboard_volume" || key == "keyboard_vol") {
+                if (const auto vol = parseVolume(value)) {
+                    config.keyboardVolume = *vol;
+                } else {
+                    std::cerr
+                        << "Invalid keyboard volume value '"
+                        << value
+                        << "' at line "
+                        << lineNum
+                        << " in "
+                        << path.string()
+                        << "\n";
+                }
+            } else if (key == "mouse_volume" || key == "mouse_vol") {
+                if (const auto vol = parseVolume(value)) {
+                    config.mouseVolume = *vol;
+                } else {
+                    std::cerr
+                        << "Invalid mouse volume value '"
+                        << value
+                        << "' at line "
+                        << lineNum
+                        << " in "
+                        << path.string()
+                        << "\n";
+                }
             } else if (key == "keyboard_soundpack" || key == "keyboard_pack" || key == "soundpack") {
                 config.keyboardPack = expandPath(value);
             } else if (key == "mouse_sound" || key == "mouse_soundpack" || key == "mouse") {
@@ -150,7 +176,9 @@ namespace keywave {
             << " [OPTIONS]\n\n"
             << "Options:\n"
             << "  -c, --config <path>             Path to configuration file\n"
-            << "  -v, --volume <float>            Audio playback volume (e.g. 0.8 or 1.0)\n"
+            << "  -v, --volume <float>            Master audio playback volume (e.g. 0.8 or 1.0)\n"
+            << "      --keyboard-vol <float>      Keyboard audio playback volume override\n"
+            << "      --mouse-vol <float>         Mouse audio playback volume override\n"
             << "  -k, --keyboard-pack <path>      Path to keyboard soundpack directory\n"
             << "  -m, --mouse-sound <path>        Path to mouse sound audio file\n"
             << "  -K, --keyboard-dev <name|path>  Keyboard device name (or /dev/input path)\n"
@@ -168,15 +196,22 @@ namespace keywave {
     ParseResult parseConfig(int argc, char* const argv[]) {
         std::filesystem::path customConfigPath;
         std::optional<float> cliVolume;
+        std::optional<float> cliKeyboardVolume;
+        std::optional<float> cliMouseVolume;
         std::optional<std::filesystem::path> cliKeyboardPack;
         std::optional<std::filesystem::path> cliMouseSound;
         std::optional<std::string> cliKeyboardDevice;
         std::optional<std::string> cliMouseDevice;
 
         constexpr const char* const shortOpts = "c:v:k:m:K:M:lVh";
+        enum LongOnlyOpt { OptKeyboardVol = 1000, OptMouseVol };
         constexpr struct option longOpts[] = {
             {"config", required_argument, nullptr, 'c'},
             {"volume", required_argument, nullptr, 'v'},
+            {"keyboard-vol", required_argument, nullptr, OptKeyboardVol},
+            {"keyboard-volume", required_argument, nullptr, OptKeyboardVol},
+            {"mouse-vol", required_argument, nullptr, OptMouseVol},
+            {"mouse-volume", required_argument, nullptr, OptMouseVol},
             {"keyboard-pack", required_argument, nullptr, 'k'},
             {"mouse-sound", required_argument, nullptr, 'm'},
             {"keyboard-dev", required_argument, nullptr, 'K'},
@@ -201,6 +236,24 @@ namespace keywave {
                     return ParseResult{ParseStatus::Error, {}};
                 }
                 cliVolume = vol;
+                break;
+            }
+            case OptKeyboardVol: {
+                const auto vol = parseVolume(optarg);
+                if (!vol) {
+                    std::cerr << "Error: Invalid keyboard volume specified on CLI: " << optarg << "\n";
+                    return ParseResult{ParseStatus::Error, {}};
+                }
+                cliKeyboardVolume = vol;
+                break;
+            }
+            case OptMouseVol: {
+                const auto vol = parseVolume(optarg);
+                if (!vol) {
+                    std::cerr << "Error: Invalid mouse volume specified on CLI: " << optarg << "\n";
+                    return ParseResult{ParseStatus::Error, {}};
+                }
+                cliMouseVolume = vol;
                 break;
             }
             case 'k':
@@ -247,6 +300,12 @@ namespace keywave {
 
         if (cliVolume) {
             config.volume = *cliVolume;
+        }
+        if (cliKeyboardVolume) {
+            config.keyboardVolume = *cliKeyboardVolume;
+        }
+        if (cliMouseVolume) {
+            config.mouseVolume = *cliMouseVolume;
         }
         if (cliKeyboardPack) {
             config.keyboardPack = std::move(*cliKeyboardPack);

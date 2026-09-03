@@ -9,6 +9,8 @@ namespace keywave {
 
 struct Config {
     float volume{1.0F};
+    std::optional<float> keyboardVolume;
+    std::optional<float> mouseVolume;
     std::filesystem::path keyboardPack{
         "assets/sounds/keyboards/cherrymx-red-abs"};
     std::filesystem::path mouseSound{"assets/sounds/mouses/mouse-click.mp3"};
