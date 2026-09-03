@@ -1,24 +1,18 @@
-#define MA_IMPLEMENTATION
+#include "keywave/audio.h"
 
-#include "miniaudio.h"
-
-#include <stdio.h>
+#include <cstdio>
+#include <iostream>
 
 int main() {
-    ma_result result;
-    ma_engine engine;
-
-    result = ma_engine_init(NULL, &engine);
-    if (result != MA_SUCCESS) {
-        return -1;
+    keywave::AudioEngine audio;
+    if (audio.init()) {
+        audio.setVolume(1.0F);
+        audio.playSound("assets/sounds/mouses/mouse-click.mp3");
     }
 
-    ma_engine_play_sound(&engine, "sound.wav", NULL);
+    std::cout << "Press any key to exit!";
 
-    printf("Press Enter to quit...");
     getchar();
-
-    ma_engine_uninit(&engine);
 
     return 0;
 }
