@@ -10,11 +10,9 @@ Works globally across both **Wayland** and **X11** by reading directly from the 
 
 - **Global Input Detection**: Works everywhere across desktop environments and Wayland/X11 compositors.
 - **Smart Auto-Detection & Explicit Device Selection**: Automatically detects active keyboards and mice, or lets you specify exact hardware by device name or path.
-- **Device Discovery Tool**: Run `keywave --list-devices` to list all connected input devices with their names and detected types.
-- **Mechvibes Soundpack Compatibility**: Supports standard Mechvibes / Wayvibes custom keyboard soundpacks.
+- **Mechvibes Keyboard Soundpack Compatibility**: Supports standard Mechvibes / Wayvibes custom keyboard soundpacks.
 - **Mouse Click Feedback**: Plays customizable click sounds on mouse button presses.
-- **Configurable**: Configured via `$XDG_CONFIG_HOME/keywave/keywave.conf` (or `~/.config/keywave/keywave.conf`) with full CLI override support.
-- **Ultra Low Latency**: Native C++17 implementation powered by `miniaudio`.
+- **Ultra Low Latency**: Native C++17 implementation powered by [`miniaudio`](https://github.com/mackron/miniaudio).
 
 ---
 
@@ -25,6 +23,7 @@ Works globally across both **Wayland** and **X11** by reading directly from the 
 - A modern C++17 compiler (`g++` or `clang++`)
 - Make
 - ALSA / PulseAudio / PipeWire audio development libraries
+- nlohmann_json library
 - Permission to read `/dev/input/` (add your user to the `input` group):
   ```bash
   sudo usermod -aG input $USER
@@ -59,14 +58,14 @@ Keywave looks for a configuration file at `$XDG_CONFIG_HOME/keywave/keywave.conf
 ```ini
 # Keywave Configuration File
 
-# Master audio playback volume (float: 0.0 to 1.0 or higher)
+# Master audio playback volume (float: 0.0 to 1.0)
 volume = 0.8
 
 # Path to keyboard soundpack folder (containing config.json)
-keyboard_pack = assets/sounds/keyboards/cherrymx-red-abs
+keyboard_pack = /path/to/keyboard/soundpack/folder
 
 # Path to mouse click sound file
-mouse_sound = assets/sounds/mouses/mouse-click.mp3
+mouse_sound = /path/to/mouse/click/sound/file.mp3
 
 # (Optional) Specific device selection by name (run 'keywave -l' to see connected names)
 # If left unset, Keywave will automatically detect your devices.
@@ -94,7 +93,15 @@ Options:
 
 ---
 
+## Acknowledgments
+
+This project is inspired by [wayvibes](https://github.com/sahaj-b/wayvibes). 
+Special thanks to the original authors for their great work and ideas.
+
+---
+
 ## License
 
 Keywave is released under the [MIT License](LICENSE).
-Copyright (c) 2026 Nguyễn Hồng Hiệp.
+
+Copyright (c) 2026 Nguyen Hong Hiep.
