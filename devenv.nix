@@ -5,6 +5,7 @@
     bear
     alsa-lib
     libpulseaudio
+    nlohmann_json
   ];
 
   env.LD_LIBRARY_PATH = lib.makeLibraryPath [
