@@ -1,6 +1,8 @@
 #include "keywave/device.h"
 
+#include <algorithm>
 #include <array>
+#include <cctype>
 #include <fcntl.h>
 #include <iostream>
 #include <linux/input.h>
@@ -53,46 +55,119 @@ namespace keywave {
             return (keybits[idx] >> bit) & 1UL;
         }
 
-        [[nodiscard]] std::string deviceName(int fd) {
+        [[nodiscard]] std::string getDeviceName(int fd) {
             char name[256] = "Unknown";
             ioctl(fd, EVIOCGNAME(sizeof(name)), name);
             return name;
         }
 
+        [[nodiscard]] std::string toLower(std::string_view str) {
+            std::string lower(str);
+            std::transform(lower.begin(), lower.end(), lower.begin(), [](unsigned char c) { return std::tolower(c); });
+            return lower;
+        }
+
     } // namespace
 
-    std::optional<std::filesystem::path> findInputDevice(int requiredKeyCode) {
+    std::vector<DeviceInfo> listInputDevices() {
         namespace fs = std::filesystem;
+        std::vector<DeviceInfo> devices;
 
         std::error_code ec;
         if (!fs::exists("/dev/input", ec)) {
-            std::cerr << "/dev/input does not exist on this system.\n";
-            return std::nullopt;
+            return devices;
         }
 
         for (const auto& entry : fs::directory_iterator("/dev/input", ec)) {
             const std::string filename = entry.path().filename().string();
-            if (filename.rfind("event", 0) != 0)
-                continue; // not an eventN node
+            if (filename.rfind("event", 0) != 0) {
+                continue;
+            }
 
             UniqueFd fd(open(entry.path().c_str(), O_RDONLY | O_NONBLOCK));
-            if (!fd.valid())
-                continue; // often a permissions issue on other users' devices
+            if (!fd.valid()) {
+                continue;
+            }
 
-            if (hasKeyCode(fd.get(), requiredKeyCode)) {
-                std::cout << "Found device: " << deviceName(fd.get()) << " (" << entry.path().string() << ")\n";
-                return entry.path();
+            DeviceInfo info;
+            info.path = entry.path();
+            info.name = getDeviceName(fd.get());
+            info.isKeyboard = hasKeyCode(fd.get(), KEY_A);
+            info.isMouse = hasKeyCode(fd.get(), BTN_LEFT);
+
+            devices.push_back(std::move(info));
+        }
+
+        std::sort(devices.begin(), devices.end(), [](const DeviceInfo& a, const DeviceInfo& b) {
+            auto getIndex = [](const std::filesystem::path& p) {
+                std::string filename = p.filename().string();
+                if (filename.rfind("event", 0) == 0) {
+                    try {
+                        return std::stoi(filename.substr(5));
+                    } catch (...) {
+                    }
+                }
+                return -1;
+            };
+            return getIndex(a.path) < getIndex(b.path);
+        });
+
+        return devices;
+    }
+
+    std::optional<std::filesystem::path>
+    findDeviceByNameOrCapability(std::string_view nameOrPath, int fallbackKeyCode) {
+        namespace fs = std::filesystem;
+
+        if (!nameOrPath.empty() && fs::exists(nameOrPath)) {
+            UniqueFd fd(open(nameOrPath.data(), O_RDONLY | O_NONBLOCK));
+            if (fd.valid()) {
+                std::cout << "Using input device by path: " << getDeviceName(fd.get()) << " (" << nameOrPath << ")\n";
+                return fs::path(nameOrPath);
+            }
+            std::cerr << "Warning: Cannot open specified input device path: " << nameOrPath << "\n";
+        }
+
+        const auto devices = listInputDevices();
+        const std::string targetLower = toLower(nameOrPath);
+
+        if (!nameOrPath.empty()) {
+            for (const auto& dev : devices) {
+                if (toLower(dev.name).find(targetLower) != std::string::npos) {
+                    std::cout
+                        << "Matched input device by name \""
+                        << nameOrPath
+                        << "\": "
+                        << dev.name
+                        << " ("
+                        << dev.path.string()
+                        << ")\n";
+                    return dev.path;
+                }
+            }
+            std::cerr
+                << "Warning: No input device found matching name \""
+                << nameOrPath
+                << "\". Falling back to auto-detection.\n";
+        }
+
+        for (const auto& dev : devices) {
+            UniqueFd fd(open(dev.path.c_str(), O_RDONLY | O_NONBLOCK));
+            if (fd.valid() && hasKeyCode(fd.get(), fallbackKeyCode)) {
+                std::cout << "Auto-detected input device: " << dev.name << " (" << dev.path.string() << ")\n";
+                return dev.path;
             }
         }
 
-        if (ec) {
-            std::cerr << "Error scanning /dev/input: " << ec.message() << "\n";
-        }
         return std::nullopt;
     }
 
-    std::optional<std::filesystem::path> findMouseDevice() { return findInputDevice(BTN_LEFT); }
+    std::optional<std::filesystem::path> findMouseDevice(std::string_view preferredNameOrPath) {
+        return findDeviceByNameOrCapability(preferredNameOrPath, BTN_LEFT);
+    }
 
-    std::optional<std::filesystem::path> findKeyboardDevice() { return findInputDevice(KEY_A); }
+    std::optional<std::filesystem::path> findKeyboardDevice(std::string_view preferredNameOrPath) {
+        return findDeviceByNameOrCapability(preferredNameOrPath, KEY_A);
+    }
 
 } // namespace keywave

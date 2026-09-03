@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <optional>
+#include <string>
 #include <string_view>
 
 namespace keywave {
@@ -11,6 +12,8 @@ struct Config {
     std::filesystem::path keyboardPack{
         "assets/sounds/keyboards/cherrymx-red-abs"};
     std::filesystem::path mouseSound{"assets/sounds/mouses/mouse-click.mp3"};
+    std::string keyboardDevice;
+    std::string mouseDevice;
     std::filesystem::path configPath;
 };
 
@@ -19,7 +22,7 @@ struct Config {
 [[nodiscard]] std::optional<Config>
 loadConfigFile(const std::filesystem::path &path);
 
-enum class ParseStatus { Success, HelpRequested, Error };
+enum class ParseStatus { Success, HelpRequested, ListDevicesRequested, Error };
 
 struct ParseResult {
     ParseStatus status{ParseStatus::Success};

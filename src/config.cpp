@@ -122,6 +122,10 @@ namespace keywave {
                 config.keyboardPack = expandPath(value);
             } else if (key == "mouse_sound" || key == "mouse_soundpack" || key == "mouse") {
                 config.mouseSound = expandPath(value);
+            } else if (key == "keyboard_device" || key == "keyboard_dev" || key == "keyboard") {
+                config.keyboardDevice = std::string(value);
+            } else if (key == "mouse_device" || key == "mouse_dev") {
+                config.mouseDevice = std::string(value);
             } else {
                 std::cerr
                     << "Unknown configuration key '"
@@ -143,11 +147,14 @@ namespace keywave {
             << programName
             << " [OPTIONS]\n\n"
             << "Options:\n"
-            << "  -c, --config <path>         Path to configuration file\n"
-            << "  -v, --volume <float>        Audio playback volume (0.0 - 1.0)\n"
-            << "  -k, --keyboard-pack <path>  Path to keyboard soundpack directory\n"
-            << "  -m, --mouse-sound <path>    Path to mouse sound audio file\n"
-            << "  -h, --help                  Show this help message and exit\n\n"
+            << "  -c, --config <path>             Path to configuration file\n"
+            << "  -v, --volume <float>            Audio playback volume (e.g. 0.8 or 1.0)\n"
+            << "  -k, --keyboard-pack <path>      Path to keyboard soundpack directory\n"
+            << "  -m, --mouse-sound <path>        Path to mouse sound audio file\n"
+            << "  -K, --keyboard-dev <name|path>  Keyboard device name (or /dev/input path)\n"
+            << "  -M, --mouse-dev <name|path>     Mouse device name (or /dev/input path)\n"
+            << "  -l, --list-devices              List available input devices and exit\n"
+            << "  -h, --help                      Show this help message and exit\n\n"
             << "Default config file location: $XDG_CONFIG_HOME/keywave/keywave.conf\n";
     }
 
@@ -156,13 +163,18 @@ namespace keywave {
         std::optional<float> cliVolume;
         std::optional<std::filesystem::path> cliKeyboardPack;
         std::optional<std::filesystem::path> cliMouseSound;
+        std::optional<std::string> cliKeyboardDevice;
+        std::optional<std::string> cliMouseDevice;
 
-        constexpr const char* const shortOpts = "c:v:k:m:h";
+        constexpr const char* const shortOpts = "c:v:k:m:K:M:lh";
         constexpr struct option longOpts[] = {
             {"config", required_argument, nullptr, 'c'},
             {"volume", required_argument, nullptr, 'v'},
             {"keyboard-pack", required_argument, nullptr, 'k'},
             {"mouse-sound", required_argument, nullptr, 'm'},
+            {"keyboard-dev", required_argument, nullptr, 'K'},
+            {"mouse-dev", required_argument, nullptr, 'M'},
+            {"list-devices", no_argument, nullptr, 'l'},
             {"help", no_argument, nullptr, 'h'},
             {nullptr, 0, nullptr, 0}
         };
@@ -189,6 +201,14 @@ namespace keywave {
             case 'm':
                 cliMouseSound = expandPath(optarg);
                 break;
+            case 'K':
+                cliKeyboardDevice = optarg;
+                break;
+            case 'M':
+                cliMouseDevice = optarg;
+                break;
+            case 'l':
+                return ParseResult{ParseStatus::ListDevicesRequested, {}};
             case 'h':
                 printUsage(argv[0]);
                 return ParseResult{ParseStatus::HelpRequested, {}};
@@ -222,6 +242,12 @@ namespace keywave {
         }
         if (cliMouseSound) {
             config.mouseSound = std::move(*cliMouseSound);
+        }
+        if (cliKeyboardDevice) {
+            config.keyboardDevice = std::move(*cliKeyboardDevice);
+        }
+        if (cliMouseDevice) {
+            config.mouseDevice = std::move(*cliMouseDevice);
         }
 
         return ParseResult{ParseStatus::Success, std::move(config)};

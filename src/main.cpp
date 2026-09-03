@@ -9,6 +9,7 @@
 #include <cstring>
 #include <fcntl.h>
 #include <filesystem>
+#include <iomanip>
 #include <iostream>
 #include <linux/input.h>
 #include <string>
@@ -19,6 +20,42 @@ namespace {
 
     std::atomic<bool> g_running{true};
     void handleSignal(int) { g_running = false; }
+
+    void printDeviceList() {
+        const auto devices = keywave::listInputDevices();
+        if (devices.empty()) {
+            std::cout
+                << "No input devices accessible under /dev/input/.\n"
+                << "Check that your user is in the 'input' group.\n";
+            return;
+        }
+
+        std::cout << "Available input devices:\n";
+        for (const auto& dev : devices) {
+            std::string type;
+            if (dev.isKeyboard && dev.isMouse) {
+                type = "Keyboard/Mouse";
+            } else if (dev.isKeyboard) {
+                type = "Keyboard";
+            } else if (dev.isMouse) {
+                type = "Mouse";
+            } else {
+                type = "Other";
+            }
+
+            std::cout
+                << "  ["
+                << std::left
+                << std::setw(14)
+                << type
+                << "] "
+                << "\""
+                << dev.name
+                << "\" ("
+                << dev.path.string()
+                << ")\n";
+        }
+    }
 
     void listenAndPlayFixed(
         const std::filesystem::path& device, const std::filesystem::path& soundPath, keywave::AudioEngine& audio
@@ -77,6 +114,10 @@ int main(int argc, char* argv[]) {
     if (parseResult.status == keywave::ParseStatus::HelpRequested) {
         return 0;
     }
+    if (parseResult.status == keywave::ParseStatus::ListDevicesRequested) {
+        printDeviceList();
+        return 0;
+    }
     if (parseResult.status == keywave::ParseStatus::Error) {
         return 1;
     }
@@ -96,8 +137,8 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    const auto mouse = keywave::findMouseDevice();
-    const auto keyboard = keywave::findKeyboardDevice();
+    const auto mouse = keywave::findMouseDevice(config.mouseDevice);
+    const auto keyboard = keywave::findKeyboardDevice(config.keyboardDevice);
 
     if (!mouse && !keyboard) {
         std::cerr << "No mouse or keyboard device found. Check that your user "
