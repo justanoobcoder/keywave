@@ -1,18 +1,33 @@
-CXX := g++
-CXXFLAGS := -std=c++17 -lpthread -lm -I./include
+CXX = g++
 
-TARGET := keywave
-SRC := src/*.cpp
+CXXFLAGS = -O2 -std=c++17 -Wall
+LDFLAGS = -lpthread -lm
+INCLUDES = -Iinclude
 
-.PHONY: all run clean
+SRCS = src/audio.cpp
+
+OBJS = $(SRCS:.cpp=.o)
+
+TARGET = keywave
+
+PREFIX  ?= /usr
+BINDIR  ?= $(PREFIX)/bin
 
 all: $(TARGET)
 
-$(TARGET): $(SRC)
-	$(CXX) $(CXXFLAGS) -o $(TARGET) $(SRC)
+$(TARGET): $(OBJS) src/main.o
+	$(CXX) $(CXXFLAGS) -o $@ $^
 
-run: $(TARGET)
-	./$(TARGET)
+%.o: %.cpp
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(INCLUDES) -c $< -o $@
 
 clean:
-	rm -f $(TARGET)
+	rm -f src/*.o *.o $(TARGET)
+
+install: $(TARGET)
+	install -D -m 755 $(TARGET) $(DESTDIR)$(BINDIR)/$(TARGET)
+
+uninstall:
+	rm -f $(DESTDIR)$(BINDIR)/$(TARGET)
+
+.PHONY: all clean install uninstall
