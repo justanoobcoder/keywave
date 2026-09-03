@@ -88,6 +88,7 @@ Options:
   -K, --keyboard-dev <name|path>  Keyboard device name (or /dev/input path)
   -M, --mouse-dev <name|path>     Mouse device name (or /dev/input path)
   -l, --list-devices              List available input devices and exit
+  -V, --version                   Show version information and exit
   -h, --help                      Show this help message and exit
 ```
 

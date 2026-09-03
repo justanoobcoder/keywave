@@ -22,7 +22,13 @@ struct Config {
 [[nodiscard]] std::optional<Config>
 loadConfigFile(const std::filesystem::path &path);
 
-enum class ParseStatus { Success, HelpRequested, ListDevicesRequested, Error };
+enum class ParseStatus {
+    Success,
+    HelpRequested,
+    VersionRequested,
+    ListDevicesRequested,
+    Error
+};
 
 struct ParseResult {
     ParseStatus status{ParseStatus::Success};
@@ -32,5 +38,6 @@ struct ParseResult {
 [[nodiscard]] ParseResult parseConfig(int argc, char *const argv[]);
 
 void printUsage(std::string_view programName);
+void printVersion();
 
 } // namespace keywave

@@ -1,6 +1,5 @@
-#include "test_framework.h"
-
 #include "keywave/config.h"
+#include "test_framework.h"
 
 #include <string>
 #include <vector>
@@ -94,7 +93,7 @@ bool test_parseConfig_cliOverrides() {
 
 bool test_parseConfig_helpOption() {
     std::vector<std::string> args = {"keywave", "--help"};
-    std::vector<char*>       argv;
+    std::vector<char*> argv;
     argv.reserve(args.size());
     for (auto& s : args)
         argv.push_back(s.data());
@@ -106,7 +105,7 @@ bool test_parseConfig_helpOption() {
 
 bool test_parseConfig_listDevicesOption() {
     std::vector<std::string> args = {"keywave", "--list-devices"};
-    std::vector<char*>       argv;
+    std::vector<char*> argv;
     argv.reserve(args.size());
     for (auto& s : args)
         argv.push_back(s.data());
@@ -118,7 +117,7 @@ bool test_parseConfig_listDevicesOption() {
 
 bool test_parseConfig_invalidVolumePercent() {
     std::vector<std::string> args = {"keywave", "-v", "80%"};
-    std::vector<char*>       argv;
+    std::vector<char*> argv;
     argv.reserve(args.size());
     for (auto& s : args)
         argv.push_back(s.data());
@@ -130,7 +129,7 @@ bool test_parseConfig_invalidVolumePercent() {
 
 bool test_parseConfig_invalidVolumeNegative() {
     std::vector<std::string> args = {"keywave", "-v", "-0.5"};
-    std::vector<char*>       argv;
+    std::vector<char*> argv;
     argv.reserve(args.size());
     for (auto& s : args)
         argv.push_back(s.data());
@@ -142,13 +141,37 @@ bool test_parseConfig_invalidVolumeNegative() {
 
 bool test_parseConfig_nonExistentConfigFlag() {
     std::vector<std::string> args = {"keywave", "-c", "/path/to/missing_config_test.conf"};
-    std::vector<char*>       argv;
+    std::vector<char*> argv;
     argv.reserve(args.size());
     for (auto& s : args)
         argv.push_back(s.data());
 
     const auto res = keywave::parseConfig(static_cast<int>(argv.size()), argv.data());
     TEST_ASSERT(res.status == keywave::ParseStatus::Error);
+    return true;
+}
+
+bool test_parseConfig_versionOption() {
+    std::vector<std::string> args = {"keywave", "--version"};
+    std::vector<char*> argv;
+    argv.reserve(args.size());
+    for (auto& s : args)
+        argv.push_back(s.data());
+
+    const auto res = keywave::parseConfig(static_cast<int>(argv.size()), argv.data());
+    TEST_ASSERT(res.status == keywave::ParseStatus::VersionRequested);
+    return true;
+}
+
+bool test_parseConfig_versionShortOption() {
+    std::vector<std::string> args = {"keywave", "-V"};
+    std::vector<char*> argv;
+    argv.reserve(args.size());
+    for (auto& s : args)
+        argv.push_back(s.data());
+
+    const auto res = keywave::parseConfig(static_cast<int>(argv.size()), argv.data());
+    TEST_ASSERT(res.status == keywave::ParseStatus::VersionRequested);
     return true;
 }
 
@@ -160,6 +183,8 @@ void runConfigTests() {
     RUN_TEST(test_parseConfig_cliOverrides);
     RUN_TEST(test_parseConfig_helpOption);
     RUN_TEST(test_parseConfig_listDevicesOption);
+    RUN_TEST(test_parseConfig_versionOption);
+    RUN_TEST(test_parseConfig_versionShortOption);
     RUN_TEST(test_parseConfig_invalidVolumePercent);
     RUN_TEST(test_parseConfig_invalidVolumeNegative);
     RUN_TEST(test_parseConfig_nonExistentConfigFlag);

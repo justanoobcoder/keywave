@@ -1,8 +1,14 @@
 CXX = g++
 
+VERSION    := $(shell cat VERSION 2>/dev/null || echo "0.0.0")
+GIT_COMMIT ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+BUILD_DATE := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
+
 CXXFLAGS = -O2 -std=c++17 -Wall -Wextra
 LDFLAGS = -lpthread -lm
 INCLUDES = -Iinclude
+
+VERSION_H = include/keywave/version.h
 
 SRCS = src/audio.cpp \
        src/config.cpp \
@@ -28,6 +34,17 @@ MAN5DIR  ?= $(MANDIR)/man5
 
 all: $(TARGET)
 
+$(VERSION_H): VERSION
+	@mkdir -p include/keywave
+	@echo "/* auto-generated, do not edit */" > $@
+	@echo "#pragma once" >> $@
+	@echo "#include <string_view>" >> $@
+	@echo "namespace keywave {" >> $@
+	@echo "inline constexpr std::string_view APP_VERSION = \"$(VERSION)\";" >> $@
+	@echo "inline constexpr std::string_view GIT_COMMIT  = \"$(GIT_COMMIT)\";" >> $@
+	@echo "inline constexpr std::string_view BUILD_DATE  = \"$(BUILD_DATE)\";" >> $@
+	@echo "}" >> $@
+
 $(TARGET): $(OBJS) src/main.o
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
@@ -37,11 +54,11 @@ $(TEST_TARGET): $(OBJS) $(TEST_OBJS)
 test: $(TEST_TARGET)
 	./$(TEST_TARGET)
 
-%.o: %.cpp
+%.o: %.cpp $(VERSION_H)
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
 clean:
-	rm -f src/*.o tests/*.o $(TARGET) $(TEST_TARGET)
+	rm -f src/*.o tests/*.o $(TARGET) $(TEST_TARGET) $(VERSION_H)
 
 install: $(TARGET)
 	install -D -m 755 $(TARGET) $(DESTDIR)$(BINDIR)/$(TARGET)

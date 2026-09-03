@@ -111,7 +111,8 @@ namespace {
 
 int main(int argc, char* argv[]) {
     const auto parseResult = keywave::parseConfig(argc, argv);
-    if (parseResult.status == keywave::ParseStatus::HelpRequested) {
+    if (parseResult.status == keywave::ParseStatus::HelpRequested
+        || parseResult.status == keywave::ParseStatus::VersionRequested) {
         return 0;
     }
     if (parseResult.status == keywave::ParseStatus::ListDevicesRequested) {

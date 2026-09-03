@@ -1,5 +1,7 @@
 #include "keywave/config.h"
 
+#include "keywave/version.h"
+
 #include <cstdlib>
 #include <fstream>
 #include <getopt.h>
@@ -154,8 +156,13 @@ namespace keywave {
             << "  -K, --keyboard-dev <name|path>  Keyboard device name (or /dev/input path)\n"
             << "  -M, --mouse-dev <name|path>     Mouse device name (or /dev/input path)\n"
             << "  -l, --list-devices              List available input devices and exit\n"
+            << "  -V, --version                   Show version information and exit\n"
             << "  -h, --help                      Show this help message and exit\n\n"
             << "Default config file location: $XDG_CONFIG_HOME/keywave/keywave.conf\n";
+    }
+
+    void printVersion() {
+        std::cout << "keywave v" << APP_VERSION << " (build: " << GIT_COMMIT << ", " << BUILD_DATE << ")\n";
     }
 
     ParseResult parseConfig(int argc, char* const argv[]) {
@@ -166,7 +173,7 @@ namespace keywave {
         std::optional<std::string> cliKeyboardDevice;
         std::optional<std::string> cliMouseDevice;
 
-        constexpr const char* const shortOpts = "c:v:k:m:K:M:lh";
+        constexpr const char* const shortOpts = "c:v:k:m:K:M:lVh";
         constexpr struct option longOpts[] = {
             {"config", required_argument, nullptr, 'c'},
             {"volume", required_argument, nullptr, 'v'},
@@ -175,6 +182,7 @@ namespace keywave {
             {"keyboard-dev", required_argument, nullptr, 'K'},
             {"mouse-dev", required_argument, nullptr, 'M'},
             {"list-devices", no_argument, nullptr, 'l'},
+            {"version", no_argument, nullptr, 'V'},
             {"help", no_argument, nullptr, 'h'},
             {nullptr, 0, nullptr, 0}
         };
@@ -209,6 +217,9 @@ namespace keywave {
                 break;
             case 'l':
                 return ParseResult{ParseStatus::ListDevicesRequested, {}};
+            case 'V':
+                printVersion();
+                return ParseResult{ParseStatus::VersionRequested, {}};
             case 'h':
                 printUsage(argv[0]);
                 return ParseResult{ParseStatus::HelpRequested, {}};
