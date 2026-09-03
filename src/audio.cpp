@@ -67,6 +67,7 @@ namespace keywave {
         std::filesystem::path path{soundFile};
 
         if (soundFile.empty() || !std::filesystem::exists(path)) {
+            std::cerr << "[AudioEngine] Sound file not found: " << path.string() << "\n";
             playClickTone();
             return;
         }

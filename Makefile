@@ -5,7 +5,8 @@ LDFLAGS = -lpthread -lm
 INCLUDES = -Iinclude
 
 SRCS = src/audio.cpp \
-       src/device.cpp
+       src/device.cpp \
+       src/soundpack.cpp
 
 OBJS = $(SRCS:.cpp=.o)
 
