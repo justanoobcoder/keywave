@@ -9,6 +9,8 @@ Works globally across both **Wayland** and **X11** by reading directly from the 
 ## Features
 
 - **Global Input Detection**: Works everywhere across desktop environments and Wayland/X11 compositors.
+- **Smart Auto-Detection & Explicit Device Selection**: Automatically detects active keyboards and mice, or lets you specify exact hardware by device name or path.
+- **Device Discovery Tool**: Run `keywave --list-devices` to list all connected input devices with their names and detected types.
 - **Mechvibes Soundpack Compatibility**: Supports standard Mechvibes / Wayvibes custom keyboard soundpacks.
 - **Mouse Click Feedback**: Plays customizable click sounds on mouse button presses.
 - **Configurable**: Configured via `$XDG_CONFIG_HOME/keywave/keywave.conf` (or `~/.config/keywave/keywave.conf`) with full CLI override support.
@@ -61,10 +63,15 @@ Keywave looks for a configuration file at `$XDG_CONFIG_HOME/keywave/keywave.conf
 volume = 0.8
 
 # Path to keyboard soundpack folder (containing config.json)
-keyboard_pack = /path/to/soundpack
+keyboard_pack = assets/sounds/keyboards/cherrymx-red-abs
 
 # Path to mouse click sound file
-mouse_sound = /path/to/mouse-click.mp3
+mouse_sound = assets/sounds/mouses/mouse-click.mp3
+
+# (Optional) Specific device selection by name (run 'keywave -l' to see connected names)
+# If left unset, Keywave will automatically detect your devices.
+keyboard_device = ITE Tech. Inc. ITE Device(8176) Keyboard
+mouse_device = Logitech M585/M590
 ```
 
 ### Command-Line Arguments
@@ -75,11 +82,14 @@ Command-line flags override values specified in the configuration file:
 Usage: keywave [OPTIONS]
 
 Options:
-  -c, --config <path>         Path to configuration file
-  -v, --volume <float>        Audio playback volume (e.g. 0.8 or 1.0)
-  -k, --keyboard-pack <path>  Path to keyboard soundpack directory
-  -m, --mouse-sound <path>    Path to mouse sound audio file
-  -h, --help                  Show this help message and exit
+  -c, --config <path>             Path to configuration file
+  -v, --volume <float>            Audio playback volume (e.g. 0.8 or 1.0)
+  -k, --keyboard-pack <path>      Path to keyboard soundpack directory
+  -m, --mouse-sound <path>        Path to mouse sound audio file
+  -K, --keyboard-dev <name|path>  Keyboard device name (or /dev/input path)
+  -M, --mouse-dev <name|path>     Mouse device name (or /dev/input path)
+  -l, --list-devices              List available input devices and exit
+  -h, --help                      Show this help message and exit
 ```
 
 ---

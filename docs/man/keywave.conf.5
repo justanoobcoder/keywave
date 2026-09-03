@@ -31,6 +31,16 @@ Tilde (\fB~\fR) expansion to the user's home directory is supported.
 .BI mouse " = path"
 Specifies the filesystem path to an audio file (e.g., WAV, MP3, FLAC) to play when mouse click events occur.
 Tilde (\fB~\fR) expansion to the user's home directory is supported.
+.TP
+.BI keyboard_device " = name|path"
+.TQ
+.BI keyboard_dev " = name|path"
+Specifies the keyboard device name (case-insensitive substring match) or explicit filesystem path. If omitted, Keywave automatically detects the keyboard.
+.TP
+.BI mouse_device " = name|path"
+.TQ
+.BI mouse_dev " = name|path"
+Specifies the mouse device name (case-insensitive substring match) or explicit filesystem path. If omitted, Keywave automatically detects the mouse.
 .SH EXAMPLES
 A typical \fBkeywave.conf\fR file:
 .PP
@@ -40,6 +50,10 @@ A typical \fBkeywave.conf\fR file:
 volume = 0.75
 keyboard_pack = ~/.local/share/keywave/soundpacks/cherrymx-red-abs
 mouse_sound = ~/.local/share/keywave/soundpacks/mouse-click.mp3
+
+# Optional explicit device selection by name (run 'keywave -l' to see names)
+keyboard_device = ITE Tech. Inc. ITE Device(8176) Keyboard
+mouse_device = Logitech M585/M590
 .fi
 .RE
 .SH SEE ALSO

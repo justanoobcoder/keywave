@@ -7,6 +7,9 @@ keywave \- mechanical keyboard and mouse sound daemon for Linux
 [\fB\-v\fR \fIvolume\fR]
 [\fB\-k\fR \fIsoundpack_dir\fR]
 [\fB\-m\fR \fIsound_file\fR]
+[\fB\-K\fR \fIkeyboard_dev\fR]
+[\fB\-M\fR \fImouse_dev\fR]
+[\fB\-l\fR]
 [\fB\-h\fR]
 .SH DESCRIPTION
 .B keywave
@@ -32,6 +35,17 @@ Overrides the value in the configuration file.
 Specify the audio file to play upon mouse click events.
 Overrides the value in the configuration file.
 .TP
+.BR \-K ", " \-\-keyboard\-dev " \fIname|path\fR"
+Specify the target keyboard device by name (e.g. \fB"ITE Device(8176) Keyboard"\fR) or explicit device path (\fI/dev/input/event3\fR). Case-insensitive substring matching is supported for device names.
+Overrides the value in the configuration file.
+.TP
+.BR \-M ", " \-\-mouse\-dev " \fIname|path\fR"
+Specify the target mouse device by name (e.g. \fB"Logitech M585/M590"\fR) or explicit device path (\fI/dev/input/event2\fR). Case-insensitive substring matching is supported for device names.
+Overrides the value in the configuration file.
+.TP
+.BR \-l ", " \-\-list\-devices
+Scan and list all available input devices under \fI/dev/input/\fR along with their detected device types and paths, then exit.
+.TP
 .BR \-h ", " \-\-help
 Display command usage and exit.
 .SH FILES
@@ -49,19 +63,19 @@ Specifies the base directory where user configuration files are stored.
 .B HOME
 Used as a fallback to locate \fI~/.config\fR if \fBXDG_CONFIG_HOME\fR is not defined.
 .SH EXAMPLES
-Run with default configuration:
+List all connected input devices:
+.RS
+.B keywave \-l
+.RE
+.PP
+Run with default configuration (auto-detection):
 .RS
 .B keywave
 .RE
 .PP
-Run with custom volume and soundpack:
+Run with custom keyboard device by name:
 .RS
-.B keywave \-v 0.6 \-k /usr/share/keywave/sounds/cherrymx\-blue
-.RE
-.PP
-Use a specific configuration file:
-.RS
-.B keywave \-c ~/my_keywave.conf
+.B keywave \-K "Logitech" \-v 0.7
 .RE
 .SH SEE ALSO
 .BR keywave.conf (5)

@@ -52,6 +52,15 @@ The configuration system handles reading application parameters with a strict hi
 ### 2.2 Device Discovery Subsystem (`include/keywave/device.h`, `src/device.cpp`)
 Linux organizes physical and virtual input hardware under `/dev/input/event*`. Rather than relying on windowing systems (X11 or Wayland), Keywave operates directly at the kernel input subsystem layer.
 
+**Device Resolution Priority:**
+1. **Explicit path** (e.g. `/dev/input/event3` or `/dev/input/by-id/...`) — verified and used directly.
+2. **Device name** (case-insensitive substring match against `ioctl(fd, EVIOCGNAME, ...)`) — scans all `event*` nodes.
+3. **Auto-detection fallback** — picks the first device supporting the required key capability (`KEY_A` for keyboard, `BTN_LEFT` for mouse).
+
+**Device Listing (`-l, --list-devices`):**
+- `listInputDevices()` enumerates all `/dev/input/event*` nodes, probes capabilities, and returns a `std::vector<DeviceInfo>` sorted numerically by event index.
+- Each `DeviceInfo` contains the device name, path, and detected capability flags (`isKeyboard`, `isMouse`).
+
 **Mechanism:**
 - **Capability Bitmasks**: Queries device event capabilities using `ioctl(fd, EVIOCGBIT(EV_KEY, ...), keybits)`.
   - Keyboard discovery checks for the presence of standard keys (e.g., `KEY_A`).
