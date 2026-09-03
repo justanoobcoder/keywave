@@ -1,4 +1,9 @@
 .cache/
 .devenv/
 compile_commands.json
-keywave
+
+*.o
+*.a
+*.so
+
+/keywave
