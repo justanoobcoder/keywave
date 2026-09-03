@@ -4,7 +4,8 @@ CXXFLAGS = -O2 -std=c++17 -Wall
 LDFLAGS = -lpthread -lm
 INCLUDES = -Iinclude
 
-SRCS = src/audio.cpp
+SRCS = src/audio.cpp \
+       src/device.cpp
 
 OBJS = $(SRCS:.cpp=.o)
 
