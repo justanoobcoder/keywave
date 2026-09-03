@@ -1,0 +1,71 @@
+.TH KEYWAVE 1 "March 2026" "Keywave Manual" "User Commands"
+.SH NAME
+keywave \- mechanical keyboard and mouse sound daemon for Linux
+.SH SYNOPSIS
+.B keywave
+[\fB\-c\fR \fIconfig_file\fR]
+[\fB\-v\fR \fIvolume\fR]
+[\fB\-k\fR \fIsoundpack_dir\fR]
+[\fB\-m\fR \fIsound_file\fR]
+[\fB\-h\fR]
+.SH DESCRIPTION
+.B keywave
+is a lightweight, low-latency background daemon that reads global keyboard and mouse
+input events from the Linux evdev subsystem and plays mechanical switch / click audio feedback.
+It runs independently of the display server, supporting both Wayland and X11 seamlessly.
+.SH OPTIONS
+.TP
+.BR \-c ", " \-\-config " \fIpath\fR"
+Specify the path to a custom configuration file. If not provided,
+.B keywave
+searches for \fI$XDG_CONFIG_HOME/keywave/keywave.conf\fR or \fI~/.config/keywave/keywave.conf\fR.
+.TP
+.BR \-v ", " \-\-volume " \fIfloat\fR"
+Set the audio playback volume. Must be a non-negative floating-point number (e.g. \fB0.8\fR, \fB1.0\fR).
+Overrides the value in the configuration file.
+.TP
+.BR \-k ", " \-\-keyboard\-pack " \fIpath\fR"
+Specify the directory of the keyboard soundpack. The directory must contain a valid \fBconfig.json\fR file.
+Overrides the value in the configuration file.
+.TP
+.BR \-m ", " \-\-mouse\-sound " \fIpath\fR"
+Specify the audio file to play upon mouse click events.
+Overrides the value in the configuration file.
+.TP
+.BR \-h ", " \-\-help
+Display command usage and exit.
+.SH FILES
+.TP
+.I $XDG_CONFIG_HOME/keywave/keywave.conf
+Default per-user configuration file.
+.TP
+.I ~/.config/keywave/keywave.conf
+Fallback configuration file path if \fB$XDG_CONFIG_HOME\fR is unset.
+.SH ENVIRONMENT
+.TP
+.B XDG_CONFIG_HOME
+Specifies the base directory where user configuration files are stored.
+.TP
+.B HOME
+Used as a fallback to locate \fI~/.config\fR if \fBXDG_CONFIG_HOME\fR is not defined.
+.SH EXAMPLES
+Run with default configuration:
+.RS
+.B keywave
+.RE
+.PP
+Run with custom volume and soundpack:
+.RS
+.B keywave \-v 0.6 \-k /usr/share/keywave/sounds/cherrymx\-blue
+.RE
+.PP
+Use a specific configuration file:
+.RS
+.B keywave \-c ~/my_keywave.conf
+.RE
+.SH SEE ALSO
+.BR keywave.conf (5)
+.SH AUTHORS
+Written by Nguyễn Hồng Hiệp.
+.SH LICENSE
+MIT License.

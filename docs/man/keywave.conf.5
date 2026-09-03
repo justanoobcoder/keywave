@@ -1,0 +1,48 @@
+.TH KEYWAVE.CONF 5 "March 2026" "Keywave Manual" "File Formats Manual"
+.SH NAME
+keywave.conf \- Configuration file format for Keywave
+.SH SYNOPSIS
+\fI$XDG_CONFIG_HOME/keywave/keywave.conf\fR
+.br
+\fI~/.config/keywave/keywave.conf\fR
+.SH DESCRIPTION
+The \fBkeywave.conf\fR file configures the runtime behavior of the
+.BR keywave (1)
+daemon. The file uses a standard key-value format. Lines beginning with \fB#\fR or \fB;\fR
+are treated as comments and ignored. Section headers in brackets (e.g. \fB[keywave]\fR) are optional and ignored.
+.SH DIRECTIVES
+.TP
+.BI volume " = float"
+Sets the playback master volume. Must be a non-negative floating-point number (e.g. \fB0.8\fR, \fB1.0\fR).
+Default is \fB1.0\fR.
+.TP
+.BI keyboard_pack " = path"
+.TQ
+.BI keyboard_soundpack " = path"
+.TQ
+.BI soundpack " = path"
+Specifies the filesystem path to a Mechvibes/Wayvibes-compatible keyboard soundpack directory containing a \fBconfig.json\fR file.
+Tilde (\fB~\fR) expansion to the user's home directory is supported.
+.TP
+.BI mouse_sound " = path"
+.TQ
+.BI mouse_soundpack " = path"
+.TQ
+.BI mouse " = path"
+Specifies the filesystem path to an audio file (e.g., WAV, MP3, FLAC) to play when mouse click events occur.
+Tilde (\fB~\fR) expansion to the user's home directory is supported.
+.SH EXAMPLES
+A typical \fBkeywave.conf\fR file:
+.PP
+.RS
+.nf
+# Keywave configuration example
+volume = 0.75
+keyboard_pack = ~/.local/share/keywave/soundpacks/cherrymx-red-abs
+mouse_sound = ~/.local/share/keywave/soundpacks/mouse-click.mp3
+.fi
+.RE
+.SH SEE ALSO
+.BR keywave (1)
+.SH AUTHORS
+Written by Nguyễn Hồng Hiệp.
