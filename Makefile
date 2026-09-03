@@ -5,6 +5,7 @@ LDFLAGS = -lpthread -lm
 INCLUDES = -Iinclude
 
 SRCS = src/audio.cpp \
+       src/config.cpp \
        src/device.cpp \
        src/soundpack.cpp
 
