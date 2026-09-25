@@ -1,173 +1,172 @@
-#include "keywave/device.h"
+#include "keywave/device.hpp"
 
-#include <algorithm>
-#include <array>
-#include <cctype>
 #include <fcntl.h>
-#include <iostream>
 #include <linux/input.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
 
+#include <algorithm>
+#include <array>
+#include <cctype>
+#include <cstdint>
+#include <iostream>
+
 namespace keywave {
 
-    namespace {
+namespace {
 
-        constexpr std::size_t kBitsPerLong = 8 * sizeof(unsigned long);
-        constexpr std::size_t kKeyBitsWords = (KEY_MAX / kBitsPerLong) + 1;
+constexpr std::size_t kBitsPerLong = 8 * sizeof(uint64_t);
+constexpr std::size_t kKeyBitsWords = (KEY_MAX / kBitsPerLong) + 1;
 
-        class UniqueFd {
-          public:
-            explicit UniqueFd(int fd) noexcept : m_fd(fd) {}
-            ~UniqueFd() {
-                if (m_fd >= 0)
-                    ::close(m_fd);
-            }
+class UniqueFd {
+ public:
+  explicit UniqueFd(int fd) noexcept : fd_(fd) {}
+  ~UniqueFd() {
+    if (fd_ >= 0) ::close(fd_);
+  }
 
-            UniqueFd(const UniqueFd&) = delete;
-            UniqueFd& operator=(const UniqueFd&) = delete;
+  UniqueFd(const UniqueFd&) = delete;
+  UniqueFd& operator=(const UniqueFd&) = delete;
 
-            UniqueFd(UniqueFd&& other) noexcept : m_fd(other.m_fd) { other.m_fd = -1; }
-            UniqueFd& operator=(UniqueFd&& other) noexcept {
-                if (this != &other) {
-                    if (m_fd >= 0)
-                        ::close(m_fd);
-                    m_fd = other.m_fd;
-                    other.m_fd = -1;
-                }
-                return *this;
-            }
+  UniqueFd(UniqueFd&& other) noexcept : fd_(other.fd_) { other.fd_ = -1; }
+  UniqueFd& operator=(UniqueFd&& other) noexcept {
+    if (this != &other) {
+      if (fd_ >= 0) ::close(fd_);
+      fd_ = other.fd_;
+      other.fd_ = -1;
+    }
+    return *this;
+  }
 
-            [[nodiscard]] int get() const noexcept { return m_fd; }
-            [[nodiscard]] bool valid() const noexcept { return m_fd >= 0; }
+  [[nodiscard]] int Get() const noexcept { return fd_; }
+  [[nodiscard]] bool Valid() const noexcept { return fd_ >= 0; }
 
-          private:
-            int m_fd = -1;
-        };
+ private:
+  int fd_ = -1;
+};
 
-        [[nodiscard]] bool hasKeyCode(int fd, int keyCode) {
-            std::array<unsigned long, kKeyBitsWords> keybits{};
-            if (ioctl(fd, EVIOCGBIT(EV_KEY, sizeof(keybits)), keybits.data()) < 0) {
-                return false;
-            }
-            const std::size_t idx = static_cast<std::size_t>(keyCode) / kBitsPerLong;
-            const std::size_t bit = static_cast<std::size_t>(keyCode) % kBitsPerLong;
-            return (keybits[idx] >> bit) & 1UL;
-        }
+[[nodiscard]] bool HasKeyCode(int fd, int keyCode) {
+  std::array<uint64_t, kKeyBitsWords> keybits{};
+  if (ioctl(fd, EVIOCGBIT(EV_KEY, sizeof(keybits)), keybits.data()) < 0) {
+    return false;
+  }
+  const std::size_t idx = static_cast<std::size_t>(keyCode) / kBitsPerLong;
+  const std::size_t bit = static_cast<std::size_t>(keyCode) % kBitsPerLong;
+  return ((keybits[idx] >> bit) & 1UL) != 0U;
+}
 
-        [[nodiscard]] std::string getDeviceName(int fd) {
-            char name[256] = "Unknown";
-            ioctl(fd, EVIOCGNAME(sizeof(name)), name);
-            return name;
-        }
+[[nodiscard]] std::string GetDeviceName(int fd) {
+  char name[256] = "Unknown";
+  ioctl(fd, EVIOCGNAME(sizeof(name)), name);
+  return name;
+}
 
-        [[nodiscard]] std::string toLower(std::string_view str) {
-            std::string lower(str);
-            std::transform(lower.begin(), lower.end(), lower.begin(), [](unsigned char c) { return std::tolower(c); });
-            return lower;
-        }
+[[nodiscard]] std::string ToLower(std::string_view str) {
+  std::string lower(str);
+  std::transform(lower.begin(), lower.end(), lower.begin(),
+                 [](unsigned char c) { return std::tolower(c); });
+  return lower;
+}
 
-    } // namespace
+}  // namespace
 
-    std::vector<DeviceInfo> listInputDevices() {
-        namespace fs = std::filesystem;
-        std::vector<DeviceInfo> devices;
+std::vector<DeviceInfo> ListInputDevices() {
+  namespace fs = std::filesystem;
+  std::vector<DeviceInfo> devices;
 
-        std::error_code ec;
-        if (!fs::exists("/dev/input", ec)) {
-            return devices;
-        }
+  std::error_code ec;
+  if (!fs::exists("/dev/input", ec)) {
+    return devices;
+  }
 
-        for (const auto& entry : fs::directory_iterator("/dev/input", ec)) {
-            const std::string filename = entry.path().filename().string();
-            if (filename.rfind("event", 0) != 0) {
-                continue;
-            }
+  for (const auto& entry : fs::directory_iterator("/dev/input", ec)) {
+    const std::string filename = entry.path().filename().string();
+    if (filename.rfind("event", 0) != 0) {
+      continue;
+    }
 
-            UniqueFd fd(open(entry.path().c_str(), O_RDONLY | O_NONBLOCK));
-            if (!fd.valid()) {
-                continue;
-            }
+    UniqueFd fd(open(entry.path().c_str(), O_RDONLY | O_NONBLOCK));
+    if (!fd.Valid()) {
+      continue;
+    }
 
-            DeviceInfo info;
-            info.path = entry.path();
-            info.name = getDeviceName(fd.get());
-            info.isKeyboard = hasKeyCode(fd.get(), KEY_A);
-            info.isMouse = hasKeyCode(fd.get(), BTN_LEFT);
+    DeviceInfo info;
+    info.path = entry.path();
+    info.name = GetDeviceName(fd.Get());
+    info.isKeyboard = HasKeyCode(fd.Get(), KEY_A);
+    info.isMouse = HasKeyCode(fd.Get(), BTN_LEFT);
 
-            devices.push_back(std::move(info));
-        }
+    devices.push_back(std::move(info));
+  }
 
-        std::sort(devices.begin(), devices.end(), [](const DeviceInfo& a, const DeviceInfo& b) {
-            auto getIndex = [](const std::filesystem::path& p) {
+  std::sort(devices.begin(), devices.end(),
+            [](const DeviceInfo& a, const DeviceInfo& b) {
+              auto get_index = [](const std::filesystem::path& p) {
                 std::string filename = p.filename().string();
                 if (filename.rfind("event", 0) == 0) {
-                    try {
-                        return std::stoi(filename.substr(5));
-                    } catch (...) {
-                    }
+                  try {
+                    return std::stoi(filename.substr(5));
+                  } catch (...) {
+                  }
                 }
                 return -1;
-            };
-            return getIndex(a.path) < getIndex(b.path);
-        });
+              };
+              return get_index(a.path) < get_index(b.path);
+            });
 
-        return devices;
+  return devices;
+}
+
+std::optional<std::filesystem::path> FindDeviceByNameOrCapability(
+  std::string_view nameOrPath, int fallbackKeyCode) {
+  namespace fs = std::filesystem;
+
+  if (!nameOrPath.empty() && fs::exists(nameOrPath)) {
+    UniqueFd fd(open(nameOrPath.data(), O_RDONLY | O_NONBLOCK));
+    if (fd.Valid()) {
+      std::cout << "Using input device by path: " << GetDeviceName(fd.Get())
+                << " (" << nameOrPath << ")\n";
+      return fs::path(nameOrPath);
     }
+    std::cerr << "Warning: Cannot open specified input device path: "
+              << nameOrPath << "\n";
+  }
 
-    std::optional<std::filesystem::path>
-    findDeviceByNameOrCapability(std::string_view nameOrPath, int fallbackKeyCode) {
-        namespace fs = std::filesystem;
+  const auto devices = ListInputDevices();
+  const std::string target_lower = ToLower(nameOrPath);
 
-        if (!nameOrPath.empty() && fs::exists(nameOrPath)) {
-            UniqueFd fd(open(nameOrPath.data(), O_RDONLY | O_NONBLOCK));
-            if (fd.valid()) {
-                std::cout << "Using input device by path: " << getDeviceName(fd.get()) << " (" << nameOrPath << ")\n";
-                return fs::path(nameOrPath);
-            }
-            std::cerr << "Warning: Cannot open specified input device path: " << nameOrPath << "\n";
-        }
-
-        const auto devices = listInputDevices();
-        const std::string targetLower = toLower(nameOrPath);
-
-        if (!nameOrPath.empty()) {
-            for (const auto& dev : devices) {
-                if (toLower(dev.name).find(targetLower) != std::string::npos) {
-                    std::cout
-                        << "Matched input device by name \""
-                        << nameOrPath
-                        << "\": "
-                        << dev.name
-                        << " ("
-                        << dev.path.string()
-                        << ")\n";
-                    return dev.path;
-                }
-            }
-            std::cerr
-                << "Warning: No input device found matching name \""
-                << nameOrPath
-                << "\". Falling back to auto-detection.\n";
-        }
-
-        for (const auto& dev : devices) {
-            UniqueFd fd(open(dev.path.c_str(), O_RDONLY | O_NONBLOCK));
-            if (fd.valid() && hasKeyCode(fd.get(), fallbackKeyCode)) {
-                std::cout << "Auto-detected input device: " << dev.name << " (" << dev.path.string() << ")\n";
-                return dev.path;
-            }
-        }
-
-        return std::nullopt;
+  if (!nameOrPath.empty()) {
+    for (const auto& dev : devices) {
+      if (ToLower(dev.name).find(target_lower) != std::string::npos) {
+        std::cout << "Matched input device by name \"" << nameOrPath
+                  << "\": " << dev.name << " (" << dev.path.string() << ")\n";
+        return dev.path;
+      }
     }
+    std::cerr << "Warning: No input device found matching name \"" << nameOrPath
+              << "\". Falling back to auto-detection.\n";
+  }
 
-    std::optional<std::filesystem::path> findMouseDevice(std::string_view preferredNameOrPath) {
-        return findDeviceByNameOrCapability(preferredNameOrPath, BTN_LEFT);
+  for (const auto& dev : devices) {
+    UniqueFd fd(open(dev.path.c_str(), O_RDONLY | O_NONBLOCK));
+    if (fd.Valid() && HasKeyCode(fd.Get(), fallbackKeyCode)) {
+      std::cout << "Auto-detected input device: " << dev.name << " ("
+                << dev.path.string() << ")\n";
+      return dev.path;
     }
+  }
 
-    std::optional<std::filesystem::path> findKeyboardDevice(std::string_view preferredNameOrPath) {
-        return findDeviceByNameOrCapability(preferredNameOrPath, KEY_A);
-    }
+  return std::nullopt;
+}
 
-} // namespace keywave
+std::optional<std::filesystem::path> FindMouseDevice(
+  std::string_view preferredNameOrPath) {
+  return FindDeviceByNameOrCapability(preferredNameOrPath, BTN_LEFT);
+}
+
+std::optional<std::filesystem::path> FindKeyboardDevice(
+  std::string_view preferredNameOrPath) {
+  return FindDeviceByNameOrCapability(preferredNameOrPath, KEY_A);
+}
+
+}  // namespace keywave

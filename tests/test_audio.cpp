@@ -1,23 +1,25 @@
-#include "keywave/audio.h"
-#include "test_framework.h"
+#include "keywave/audio.hpp"
+#include "test_framework.hpp"
 
-bool test_audioEngine_lifecycle() {
-    keywave::AudioEngine audio;
-    TEST_ASSERT(!audio.isReady());
+extern bool TestAudioEngineLifecycle() {
+  keywave::AudioEngine audio;
+  TEST_ASSERT(!audio.IsReady());
 
-    const bool inited = audio.init();
-    if (inited) {
-        TEST_ASSERT(audio.isReady());
-        audio.setVolume(0.5F);
-        audio.setVolume(1.0F);
-        audio.setChannelVolume(keywave::SoundChannel::Keyboard, 0.8F);
-        audio.setChannelVolume(keywave::SoundChannel::Mouse, 0.4F);
-        audio.playSound("non_existent_audio_file.wav", keywave::SoundChannel::Keyboard);
-        audio.playSound("non_existent_audio_file.wav", keywave::SoundChannel::Mouse);
-        audio.shutdown();
-        TEST_ASSERT(!audio.isReady());
-    }
-    return true;
+  const bool inited = audio.Init();
+  if (inited) {
+    TEST_ASSERT(audio.IsReady());
+    audio.SetVolume(0.5F);
+    audio.SetVolume(1.0F);
+    audio.SetChannelVolume(keywave::SoundChannel::kKeyboard, 0.8F);
+    audio.SetChannelVolume(keywave::SoundChannel::kMouse, 0.4F);
+    audio.PlaySound("non_existent_audio_file.wav",
+                    keywave::SoundChannel::kKeyboard);
+    audio.PlaySound("non_existent_audio_file.wav",
+                    keywave::SoundChannel::kMouse);
+    audio.Shutdown();
+    TEST_ASSERT(!audio.IsReady());
+  }
+  return true;
 }
 
-void runAudioTests() { RUN_TEST(test_audioEngine_lifecycle); }
+extern void RunAudioTests() { RUN_TEST(TestAudioEngineLifecycle); }
