@@ -4,11 +4,11 @@ VERSION    := $(shell cat VERSION 2>/dev/null || echo "0.0.0")
 GIT_COMMIT ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 BUILD_DATE := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-CXXFLAGS = -O2 -std=c++17 -Wall -Wextra
+CXXFLAGS = -O2 -std=c++20 -Wall -Wextra
 LDFLAGS = -lpthread -lm
 INCLUDES = -Iinclude
 
-VERSION_H = include/keywave/version.h
+VERSION_HPP = include/keywave/version.hpp
 
 SRCS = src/audio.cpp \
        src/config.cpp \
@@ -34,16 +34,18 @@ MAN5DIR  ?= $(MANDIR)/man5
 
 all: $(TARGET)
 
-$(VERSION_H): VERSION
+$(VERSION_HPP): VERSION
 	@mkdir -p include/keywave
 	@echo "/* auto-generated, do not edit */" > $@
-	@echo "#pragma once" >> $@
+	@echo "#ifndef KEYWAVE_VERSION_HPP" >> $@
+	@echo "#define KEYWAVE_VERSION_HPP" >> $@
 	@echo "#include <string_view>" >> $@
 	@echo "namespace keywave {" >> $@
-	@echo "inline constexpr std::string_view APP_VERSION = \"$(VERSION)\";" >> $@
-	@echo "inline constexpr std::string_view GIT_COMMIT  = \"$(GIT_COMMIT)\";" >> $@
-	@echo "inline constexpr std::string_view BUILD_DATE  = \"$(BUILD_DATE)\";" >> $@
+	@echo "inline constexpr std::string_view kAppVersion = \"$(VERSION)\";" >> $@
+	@echo "inline constexpr std::string_view kGitCommit  = \"$(GIT_COMMIT)\";" >> $@
+	@echo "inline constexpr std::string_view kBuildDate  = \"$(BUILD_DATE)\";" >> $@
 	@echo "}" >> $@
+	@echo "#endif" >> $@
 
 $(TARGET): $(OBJS) src/main.o
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
@@ -54,11 +56,11 @@ $(TEST_TARGET): $(OBJS) $(TEST_OBJS)
 test: $(TEST_TARGET)
 	./$(TEST_TARGET)
 
-%.o: %.cpp $(VERSION_H)
+%.o: %.cpp $(VERSION_HPP)
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
 clean:
-	rm -f src/*.o tests/*.o $(TARGET) $(TEST_TARGET) $(VERSION_H)
+	rm -f src/*.o tests/*.o $(TARGET) $(TEST_TARGET) $(VERSION_HPP)
 
 install: $(TARGET)
 	install -D -m 755 $(TARGET) $(DESTDIR)$(BINDIR)/$(TARGET)
