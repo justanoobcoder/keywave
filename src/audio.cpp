@@ -42,8 +42,7 @@ bool AudioEngine::Init() {
     return false;
   }
 
-  result =
-    ma_sound_group_init(&impl_->engine, 0, nullptr, &impl_->keyboardGroup);
+  result = ma_sound_group_init(&impl_->engine, 0, nullptr, &impl_->keyboardGroup);
   if (result != MA_SUCCESS) {
     ma_engine_uninit(&impl_->engine);
     return false;
@@ -88,8 +87,7 @@ void AudioEngine::SetChannelVolume(SoundChannel channel, float volume) {
   }
 }
 
-void AudioEngine::PlayClickTone(float frequencyHz,
-                                std::chrono::duration<float> duration) {
+void AudioEngine::PlayClickTone(float frequencyHz, std::chrono::duration<float> duration) {
   (void)frequencyHz;
   (void)duration;
   std::cerr << "[AudioEngine] No playable sound available for this click.\n";
@@ -103,15 +101,13 @@ void AudioEngine::PlaySound(std::string_view soundFile, SoundChannel channel) {
   std::filesystem::path path{soundFile};
 
   if (soundFile.empty() || !std::filesystem::exists(path)) {
-    std::cerr << "[AudioEngine] Sound file not found: " << path.string()
-              << "\n";
+    std::cerr << "[AudioEngine] Sound file not found: " << path.string() << "\n";
     PlayClickTone();
     return;
   }
 
-  ma_sound_group* group = (channel == SoundChannel::kKeyboard)
-                            ? &impl_->keyboardGroup
-                            : &impl_->mouseGroup;
+  ma_sound_group* group =
+    (channel == SoundChannel::kKeyboard) ? &impl_->keyboardGroup : &impl_->mouseGroup;
 
   if (ma_engine_play_sound(&impl_->engine, path.c_str(), group) != MA_SUCCESS) {
     std::cerr << "[AudioEngine] Failed to play sound: " << soundFile << "\n";

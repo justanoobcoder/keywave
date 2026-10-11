@@ -99,37 +99,35 @@ std::vector<DeviceInfo> ListInputDevices() {
     devices.push_back(std::move(info));
   }
 
-  std::sort(devices.begin(), devices.end(),
-            [](const DeviceInfo& a, const DeviceInfo& b) {
-              auto get_index = [](const std::filesystem::path& p) {
-                std::string filename = p.filename().string();
-                if (filename.rfind("event", 0) == 0) {
-                  try {
-                    return std::stoi(filename.substr(5));
-                  } catch (...) {
-                  }
-                }
-                return -1;
-              };
-              return get_index(a.path) < get_index(b.path);
-            });
+  std::sort(devices.begin(), devices.end(), [](const DeviceInfo& a, const DeviceInfo& b) {
+    auto get_index = [](const std::filesystem::path& p) {
+      std::string filename = p.filename().string();
+      if (filename.rfind("event", 0) == 0) {
+        try {
+          return std::stoi(filename.substr(5));
+        } catch (...) {
+        }
+      }
+      return -1;
+    };
+    return get_index(a.path) < get_index(b.path);
+  });
 
   return devices;
 }
 
-std::optional<std::filesystem::path> FindDeviceByNameOrCapability(
-  std::string_view nameOrPath, int fallbackKeyCode) {
+std::optional<std::filesystem::path> FindDeviceByNameOrCapability(std::string_view nameOrPath,
+                                                                  int fallbackKeyCode) {
   namespace fs = std::filesystem;
 
   if (!nameOrPath.empty() && fs::exists(nameOrPath)) {
     UniqueFd fd(open(nameOrPath.data(), O_RDONLY | O_NONBLOCK));
     if (fd.Valid()) {
-      std::cout << "Using input device by path: " << GetDeviceName(fd.Get())
-                << " (" << nameOrPath << ")\n";
+      std::cout << "Using input device by path: " << GetDeviceName(fd.Get()) << " (" << nameOrPath
+                << ")\n";
       return fs::path(nameOrPath);
     }
-    std::cerr << "Warning: Cannot open specified input device path: "
-              << nameOrPath << "\n";
+    std::cerr << "Warning: Cannot open specified input device path: " << nameOrPath << "\n";
   }
 
   const auto devices = ListInputDevices();
@@ -138,8 +136,8 @@ std::optional<std::filesystem::path> FindDeviceByNameOrCapability(
   if (!nameOrPath.empty()) {
     for (const auto& dev : devices) {
       if (ToLower(dev.name).find(target_lower) != std::string::npos) {
-        std::cout << "Matched input device by name \"" << nameOrPath
-                  << "\": " << dev.name << " (" << dev.path.string() << ")\n";
+        std::cout << "Matched input device by name \"" << nameOrPath << "\": " << dev.name << " ("
+                  << dev.path.string() << ")\n";
         return dev.path;
       }
     }
@@ -150,8 +148,7 @@ std::optional<std::filesystem::path> FindDeviceByNameOrCapability(
   for (const auto& dev : devices) {
     UniqueFd fd(open(dev.path.c_str(), O_RDONLY | O_NONBLOCK));
     if (fd.Valid() && HasKeyCode(fd.Get(), fallbackKeyCode)) {
-      std::cout << "Auto-detected input device: " << dev.name << " ("
-                << dev.path.string() << ")\n";
+      std::cout << "Auto-detected input device: " << dev.name << " (" << dev.path.string() << ")\n";
       return dev.path;
     }
   }
@@ -159,13 +156,11 @@ std::optional<std::filesystem::path> FindDeviceByNameOrCapability(
   return std::nullopt;
 }
 
-std::optional<std::filesystem::path> FindMouseDevice(
-  std::string_view preferredNameOrPath) {
+std::optional<std::filesystem::path> FindMouseDevice(std::string_view preferredNameOrPath) {
   return FindDeviceByNameOrCapability(preferredNameOrPath, BTN_LEFT);
 }
 
-std::optional<std::filesystem::path> FindKeyboardDevice(
-  std::string_view preferredNameOrPath) {
+std::optional<std::filesystem::path> FindKeyboardDevice(std::string_view preferredNameOrPath) {
   return FindDeviceByNameOrCapability(preferredNameOrPath, KEY_A);
 }
 

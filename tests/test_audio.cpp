@@ -12,10 +12,8 @@ extern bool TestAudioEngineLifecycle() {
     audio.SetVolume(1.0F);
     audio.SetChannelVolume(keywave::SoundChannel::kKeyboard, 0.8F);
     audio.SetChannelVolume(keywave::SoundChannel::kMouse, 0.4F);
-    audio.PlaySound("non_existent_audio_file.wav",
-                    keywave::SoundChannel::kKeyboard);
-    audio.PlaySound("non_existent_audio_file.wav",
-                    keywave::SoundChannel::kMouse);
+    audio.PlaySound("non_existent_audio_file.wav", keywave::SoundChannel::kKeyboard);
+    audio.PlaySound("non_existent_audio_file.wav", keywave::SoundChannel::kMouse);
     audio.Shutdown();
     TEST_ASSERT(!audio.IsReady());
   }

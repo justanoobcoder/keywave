@@ -30,11 +30,9 @@ class AudioEngine {
   void SetVolume(float volume);
   void SetChannelVolume(SoundChannel channel, float volume);
 
-  void PlayClickTone(float frequencyHz = 1200.0F,
-                     std::chrono::duration<float> duration = 30ms);
+  void PlayClickTone(float frequencyHz = 1200.0F, std::chrono::duration<float> duration = 30ms);
 
-  void PlaySound(std::string_view soundFile,
-                 SoundChannel channel = SoundChannel::kKeyboard);
+  void PlaySound(std::string_view soundFile, SoundChannel channel = SoundChannel::kKeyboard);
 
  private:
   struct Impl;

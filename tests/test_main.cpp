@@ -16,8 +16,7 @@ int main() {
   RunDeviceTests();
 
   std::cout << "========================================\n";
-  std::cout << "Test Summary: " << g_passed_tests << "/" << g_total_tests
-            << " passed";
+  std::cout << "Test Summary: " << g_passed_tests << "/" << g_total_tests << " passed";
   if (g_failed_tests > 0) {
     std::cout << " (" << g_failed_tests << " FAILED)\n";
     return 1;

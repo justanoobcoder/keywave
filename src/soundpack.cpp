@@ -20,8 +20,7 @@ std::optional<SoundPack> SoundPack::Load(const std::filesystem::path& dir) {
   try {
     file >> j;
   } catch (const nlohmann::json::parse_error& e) {
-    std::cerr << "Failed to parse " << config_path.string() << ": " << e.what()
-              << "\n";
+    std::cerr << "Failed to parse " << config_path.string() << ": " << e.what() << "\n";
     return std::nullopt;
   }
 
@@ -44,13 +43,12 @@ std::optional<SoundPack> SoundPack::Load(const std::filesystem::path& dir) {
       const int code = std::stoi(codeStr);
       pack.defines_.emplace(code, filename.get<std::string>());
     } catch (const std::exception&) {
-      std::cerr << "Skipping non-numeric key in defines: \"" << codeStr
-                << "\"\n";
+      std::cerr << "Skipping non-numeric key in defines: \"" << codeStr << "\"\n";
     }
   }
 
-  std::cout << "Loaded soundpack \"" << pack.name_ << "\" ("
-            << pack.defines_.size() << " keys mapped)\n";
+  std::cout << "Loaded soundpack \"" << pack.name_ << "\" (" << pack.defines_.size()
+            << " keys mapped)\n";
   return pack;
 }
 

@@ -31,8 +31,7 @@ extern bool TestSoundpackLoadValid() {
 }
 
 extern bool TestSoundpackLoadMissingConfig() {
-  const auto soundpack =
-    keywave::SoundPack::Load("/tmp/non_existent_soundpack_dir");
+  const auto soundpack = keywave::SoundPack::Load("/tmp/non_existent_soundpack_dir");
   TEST_ASSERT(!soundpack.has_value());
   return true;
 }
@@ -45,8 +44,7 @@ extern bool TestSoundpackLoadMalformedJson() {
 }
 
 extern bool TestSoundpackLoadMissingDefines() {
-  TempSoundpack pack("soundpack_test_nodefines",
-                     R"({"name": "No defines pack"})");
+  TempSoundpack pack("soundpack_test_nodefines", R"({"name": "No defines pack"})");
   const auto soundpack = keywave::SoundPack::Load(pack.dir);
   TEST_ASSERT(!soundpack.has_value());
   return true;

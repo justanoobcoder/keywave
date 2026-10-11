@@ -48,13 +48,11 @@ void PrintDeviceList() {
   }
 }
 
-void ListenAndPlayFixed(const std::filesystem::path& device,
-                        const std::filesystem::path& soundPath,
+void ListenAndPlayFixed(const std::filesystem::path& device, const std::filesystem::path& soundPath,
                         keywave::AudioEngine& audio) {
   const int fd = open(device.c_str(), O_RDONLY | O_NONBLOCK);
   if (fd < 0) {
-    std::cerr << "Failed to open " << device.string() << ": "
-              << std::strerror(errno) << "\n";
+    std::cerr << "Failed to open " << device.string() << ": " << std::strerror(errno) << "\n";
     return;
   }
 
@@ -73,13 +71,11 @@ void ListenAndPlayFixed(const std::filesystem::path& device,
   close(fd);
 }
 
-void ListenAndPlayPerKey(const std::filesystem::path& device,
-                         const keywave::SoundPack& soundpack,
+void ListenAndPlayPerKey(const std::filesystem::path& device, const keywave::SoundPack& soundpack,
                          keywave::AudioEngine& audio) {
   const int fd = open(device.c_str(), O_RDONLY | O_NONBLOCK);
   if (fd < 0) {
-    std::cerr << "Failed to open " << device.string() << ": "
-              << std::strerror(errno) << "\n";
+    std::cerr << "Failed to open " << device.string() << ": " << std::strerror(errno) << "\n";
     return;
   }
 
@@ -90,8 +86,7 @@ void ListenAndPlayPerKey(const std::filesystem::path& device,
       if (ev.type == EV_KEY && ev.value == 1) {
         const auto sound_path = soundpack.SoundFor(ev.code);
         if (sound_path) {
-          audio.PlaySound(sound_path->string(),
-                          keywave::SoundChannel::kKeyboard);
+          audio.PlaySound(sound_path->string(), keywave::SoundChannel::kKeyboard);
         }
       }
     } else {
@@ -126,8 +121,7 @@ int main(int argc, char* argv[]) {
   }
   audio.SetVolume(config.volume);
   if (config.keyboardVolume) {
-    audio.SetChannelVolume(keywave::SoundChannel::kKeyboard,
-                           *config.keyboardVolume);
+    audio.SetChannelVolume(keywave::SoundChannel::kKeyboard, *config.keyboardVolume);
   }
   if (config.mouseVolume) {
     audio.SetChannelVolume(keywave::SoundChannel::kMouse, *config.mouseVolume);
@@ -135,8 +129,7 @@ int main(int argc, char* argv[]) {
 
   const auto soundpack = keywave::SoundPack::Load(config.keyboardPack);
   if (!soundpack) {
-    std::cerr << "Failed to load soundpack at " << config.keyboardPack.string()
-              << "\n";
+    std::cerr << "Failed to load soundpack at " << config.keyboardPack.string() << "\n";
     return 1;
   }
 
@@ -157,14 +150,14 @@ int main(int argc, char* argv[]) {
   if (mouse) {
     std::cout << "Listening for clicks on " << mouse->string()
               << " (sound: " << config.mouseSound.string() << ")\n";
-    mouse_thread = std::thread(ListenAndPlayFixed, *mouse,
-                               std::cref(config.mouseSound), std::ref(audio));
+    mouse_thread =
+      std::thread(ListenAndPlayFixed, *mouse, std::cref(config.mouseSound), std::ref(audio));
   }
   if (keyboard) {
     std::cout << "Listening for keystrokes on " << keyboard->string()
               << " (soundpack: " << soundpack->Name() << ")\n";
-    keyboard_thread = std::thread(ListenAndPlayPerKey, *keyboard,
-                                  std::cref(*soundpack), std::ref(audio));
+    keyboard_thread =
+      std::thread(ListenAndPlayPerKey, *keyboard, std::cref(*soundpack), std::ref(audio));
   }
 
   std::cout << "Keywave running with master volume: " << config.volume;

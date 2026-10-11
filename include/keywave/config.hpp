@@ -12,8 +12,7 @@ struct Config {
   float volume{1.0F};
   std::optional<float> keyboardVolume;
   std::optional<float> mouseVolume;
-  std::filesystem::path keyboardPack{
-    "assets/sounds/keyboards/cherrymx-red-abs"};
+  std::filesystem::path keyboardPack{"assets/sounds/keyboards/cherrymx-red-abs"};
   std::filesystem::path mouseSound{"assets/sounds/mouses/mouse-click.mp3"};
   std::string keyboardDevice;
   std::string mouseDevice;
@@ -22,8 +21,7 @@ struct Config {
 
 [[nodiscard]] std::filesystem::path GetDefaultConfigPath();
 
-[[nodiscard]] std::optional<Config> LoadConfigFile(
-  const std::filesystem::path& path);
+[[nodiscard]] std::optional<Config> LoadConfigFile(const std::filesystem::path& path);
 
 enum class ParseStatus {
   kSuccess,

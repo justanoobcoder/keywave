@@ -11,13 +11,13 @@ inline int g_total_tests = 0;
 inline int g_passed_tests = 0;
 inline int g_failed_tests = 0;
 
-#define TEST_ASSERT(cond)                                               \
-  do {                                                                  \
-    if (!(cond)) {                                                      \
-      std::cerr << "  \033[31m[FAILED]\033[0m Assertion failed: " #cond \
-                << " (" << __FILE__ << ":" << __LINE__ << ")\n";        \
-      return false;                                                     \
-    }                                                                   \
+#define TEST_ASSERT(cond)                                                                          \
+  do {                                                                                             \
+    if (!(cond)) {                                                                                 \
+      std::cerr << "  \033[31m[FAILED]\033[0m Assertion failed: " #cond << " (" << __FILE__ << ":" \
+                << __LINE__ << ")\n";                                                              \
+      return false;                                                                                \
+    }                                                                                              \
   } while (0)
 
 #define RUN_TEST(testFunc)                                          \
@@ -71,8 +71,7 @@ struct TempFile {
 
 struct TempSoundpack {
   std::filesystem::path dir;
-  explicit TempSoundpack(const std::string& name,
-                         const std::string& jsonContent) {
+  explicit TempSoundpack(const std::string& name, const std::string& jsonContent) {
     dir = std::filesystem::temp_directory_path() / name;
     std::filesystem::create_directories(dir);
     std::ofstream f(dir / "config.json");

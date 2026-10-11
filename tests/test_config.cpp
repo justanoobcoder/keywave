@@ -27,12 +27,11 @@ extern bool TestLoadConfigFileValid() {
   // NOLINTNEXTLINE(readability-simplify-boolean-expr)
   TEST_ASSERT(loaded->volume >= 0.64F && loaded->volume <= 0.66F);
   // NOLINTNEXTLINE(readability-simplify-boolean-expr)
-  TEST_ASSERT(loaded->keyboardVolume.has_value() &&
-              *loaded->keyboardVolume >= 0.79F &&
+  TEST_ASSERT(loaded->keyboardVolume.has_value() && *loaded->keyboardVolume >= 0.79F &&
               *loaded->keyboardVolume <= 0.81F);
   // NOLINTNEXTLINE(readability-simplify-boolean-expr)
-  TEST_ASSERT(loaded->mouseVolume.has_value() &&
-              *loaded->mouseVolume >= 0.39F && *loaded->mouseVolume <= 0.41F);
+  TEST_ASSERT(loaded->mouseVolume.has_value() && *loaded->mouseVolume >= 0.39F &&
+              *loaded->mouseVolume <= 0.41F);
   TEST_ASSERT(loaded->keyboardPack == "/tmp/custom_keyboard");
   TEST_ASSERT(loaded->mouseSound == "/tmp/custom_mouse.mp3");
   TEST_ASSERT(loaded->keyboardDevice == "Custom Keyboard Device");
@@ -63,8 +62,7 @@ extern bool TestLoadConfigFileAliasesAndComments() {
 }
 
 extern bool TestLoadConfigFileNonExistent() {
-  const auto loaded =
-    keywave::LoadConfigFile("/path/to/definitely/non_existent_file.conf");
+  const auto loaded = keywave::LoadConfigFile("/path/to/definitely/non_existent_file.conf");
   TEST_ASSERT(!loaded.has_value());
   return true;
 }
@@ -78,40 +76,24 @@ extern bool TestParseConfigCliOverrides() {
                 "mouse_device = Old Mouse\n");
 
   std::string conf_str = conf.path.string();
-  std::vector<std::string> args = {"keywave",
-                                   "-c",
-                                   conf_str,
-                                   "-v",
-                                   "0.9",
-                                   "--keyboard-vol",
-                                   "0.75",
-                                   "--mouse-vol",
-                                   "0.35",
-                                   "-k",
-                                   "/cli/keyboard",
-                                   "-m",
-                                   "/cli/mouse.wav",
-                                   "-K",
-                                   "New Keyboard",
-                                   "-M",
-                                   "New Mouse"};
+  std::vector<std::string> args = {
+    "keywave",        "-c",          conf_str,       "-v", "0.9",           "--keyboard-vol",
+    "0.75",           "--mouse-vol", "0.35",         "-k", "/cli/keyboard", "-m",
+    "/cli/mouse.wav", "-K",          "New Keyboard", "-M", "New Mouse"};
 
   std::vector<char*> argv;
   argv.reserve(args.size());
   for (auto& s : args) argv.push_back(s.data());
 
-  const auto res =
-    keywave::ParseConfig(static_cast<int>(argv.size()), argv.data());
+  const auto res = keywave::ParseConfig(static_cast<int>(argv.size()), argv.data());
   TEST_ASSERT(res.status == keywave::ParseStatus::kSuccess);
   // NOLINTNEXTLINE(readability-simplify-boolean-expr)
   TEST_ASSERT(res.config.volume >= 0.89F && res.config.volume <= 0.91F);
   // NOLINTNEXTLINE(readability-simplify-boolean-expr)
-  TEST_ASSERT(res.config.keyboardVolume.has_value() &&
-              *res.config.keyboardVolume >= 0.74F &&
+  TEST_ASSERT(res.config.keyboardVolume.has_value() && *res.config.keyboardVolume >= 0.74F &&
               *res.config.keyboardVolume <= 0.76F);
   // NOLINTNEXTLINE(readability-simplify-boolean-expr)
-  TEST_ASSERT(res.config.mouseVolume.has_value() &&
-              *res.config.mouseVolume >= 0.34F &&
+  TEST_ASSERT(res.config.mouseVolume.has_value() && *res.config.mouseVolume >= 0.34F &&
               *res.config.mouseVolume <= 0.36F);
   TEST_ASSERT(res.config.keyboardPack == "/cli/keyboard");
   TEST_ASSERT(res.config.mouseSound == "/cli/mouse.wav");
@@ -126,8 +108,7 @@ extern bool TestParseConfigHelpOption() {
   argv.reserve(args.size());
   for (auto& s : args) argv.push_back(s.data());
 
-  const auto res =
-    keywave::ParseConfig(static_cast<int>(argv.size()), argv.data());
+  const auto res = keywave::ParseConfig(static_cast<int>(argv.size()), argv.data());
   TEST_ASSERT(res.status == keywave::ParseStatus::kHelpRequested);
   return true;
 }
@@ -138,8 +119,7 @@ extern bool TestParseConfigListDevicesOption() {
   argv.reserve(args.size());
   for (auto& s : args) argv.push_back(s.data());
 
-  const auto res =
-    keywave::ParseConfig(static_cast<int>(argv.size()), argv.data());
+  const auto res = keywave::ParseConfig(static_cast<int>(argv.size()), argv.data());
   TEST_ASSERT(res.status == keywave::ParseStatus::kListDevicesRequested);
   return true;
 }
@@ -150,8 +130,7 @@ extern bool TestParseConfigInvalidVolumePercent() {
   argv.reserve(args.size());
   for (auto& s : args) argv.push_back(s.data());
 
-  const auto res =
-    keywave::ParseConfig(static_cast<int>(argv.size()), argv.data());
+  const auto res = keywave::ParseConfig(static_cast<int>(argv.size()), argv.data());
   TEST_ASSERT(res.status == keywave::ParseStatus::kError);
   return true;
 }
@@ -162,21 +141,18 @@ extern bool TestParseConfigInvalidVolumeNegative() {
   argv.reserve(args.size());
   for (auto& s : args) argv.push_back(s.data());
 
-  const auto res =
-    keywave::ParseConfig(static_cast<int>(argv.size()), argv.data());
+  const auto res = keywave::ParseConfig(static_cast<int>(argv.size()), argv.data());
   TEST_ASSERT(res.status == keywave::ParseStatus::kError);
   return true;
 }
 
 extern bool TestParseConfigNonExistentConfigFlag() {
-  std::vector<std::string> args = {"keywave", "-c",
-                                   "/path/to/missing_config_test.conf"};
+  std::vector<std::string> args = {"keywave", "-c", "/path/to/missing_config_test.conf"};
   std::vector<char*> argv;
   argv.reserve(args.size());
   for (auto& s : args) argv.push_back(s.data());
 
-  const auto res =
-    keywave::ParseConfig(static_cast<int>(argv.size()), argv.data());
+  const auto res = keywave::ParseConfig(static_cast<int>(argv.size()), argv.data());
   TEST_ASSERT(res.status == keywave::ParseStatus::kError);
   return true;
 }
@@ -187,8 +163,7 @@ extern bool TestParseConfigVersionOption() {
   argv.reserve(args.size());
   for (auto& s : args) argv.push_back(s.data());
 
-  const auto res =
-    keywave::ParseConfig(static_cast<int>(argv.size()), argv.data());
+  const auto res = keywave::ParseConfig(static_cast<int>(argv.size()), argv.data());
   TEST_ASSERT(res.status == keywave::ParseStatus::kVersionRequested);
   return true;
 }
@@ -199,8 +174,7 @@ extern bool TestParseConfigVersionShortOption() {
   argv.reserve(args.size());
   for (auto& s : args) argv.push_back(s.data());
 
-  const auto res =
-    keywave::ParseConfig(static_cast<int>(argv.size()), argv.data());
+  const auto res = keywave::ParseConfig(static_cast<int>(argv.size()), argv.data());
   TEST_ASSERT(res.status == keywave::ParseStatus::kVersionRequested);
   return true;
 }
