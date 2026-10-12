@@ -8,8 +8,10 @@
 #include <algorithm>
 #include <array>
 #include <cctype>
+#include <charconv>
 #include <cstdint>
 #include <iostream>
+#include <system_error>
 
 namespace keywave {
 
@@ -63,9 +65,29 @@ class UniqueFd {
 
 [[nodiscard]] std::string ToLower(std::string_view str) {
   std::string lower(str);
-  std::transform(lower.begin(), lower.end(), lower.begin(),
-                 [](unsigned char c) { return std::tolower(c); });
+  for (char& c : lower) {
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+  }
   return lower;
+}
+
+[[nodiscard]] int ParseEventIndex(const std::filesystem::path& path) {
+  const std::string filename = path.filename().string();
+  std::string_view sv = filename;
+  if (!sv.starts_with("event")) {
+    return -1;
+  }
+  sv.remove_prefix(5);
+  int index = -1;
+  const auto [ptr, ec] = std::from_chars(sv.data(), sv.data() + sv.size(), index);
+  if (ec != std::errc{} || ptr != sv.data() + sv.size()) {
+    return -1;
+  }
+  return index;
+}
+
+[[nodiscard]] bool CompareDeviceInfo(const DeviceInfo& a, const DeviceInfo& b) {
+  return ParseEventIndex(a.path) < ParseEventIndex(b.path);
 }
 
 }  // namespace
@@ -80,8 +102,7 @@ std::vector<DeviceInfo> ListInputDevices() {
   }
 
   for (const auto& entry : fs::directory_iterator("/dev/input", ec)) {
-    const std::string filename = entry.path().filename().string();
-    if (filename.rfind("event", 0) != 0) {
+    if (ParseEventIndex(entry.path()) < 0) {
       continue;
     }
 
@@ -99,19 +120,7 @@ std::vector<DeviceInfo> ListInputDevices() {
     devices.push_back(std::move(info));
   }
 
-  std::sort(devices.begin(), devices.end(), [](const DeviceInfo& a, const DeviceInfo& b) {
-    auto get_index = [](const std::filesystem::path& p) {
-      std::string filename = p.filename().string();
-      if (filename.rfind("event", 0) == 0) {
-        try {
-          return std::stoi(filename.substr(5));
-        } catch (...) {
-        }
-      }
-      return -1;
-    };
-    return get_index(a.path) < get_index(b.path);
-  });
+  std::sort(devices.begin(), devices.end(), CompareDeviceInfo);
 
   return devices;
 }
@@ -120,8 +129,10 @@ std::optional<std::filesystem::path> FindDeviceByNameOrCapability(std::string_vi
                                                                   int fallbackKeyCode) {
   namespace fs = std::filesystem;
 
-  if (!nameOrPath.empty() && fs::exists(nameOrPath)) {
-    UniqueFd fd(open(nameOrPath.data(), O_RDONLY | O_NONBLOCK));
+  std::error_code ec;
+  if (!nameOrPath.empty() && fs::exists(nameOrPath, ec)) {
+    const std::string name_or_path_str(nameOrPath);
+    UniqueFd fd(open(name_or_path_str.c_str(), O_RDONLY | O_NONBLOCK));
     if (fd.Valid()) {
       std::cout << "Using input device by path: " << GetDeviceName(fd.Get()) << " (" << nameOrPath
                 << ")\n";
