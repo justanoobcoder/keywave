@@ -74,9 +74,9 @@ void AudioEngine::PlaySound(std::string_view file, SoundChannel channel) {
     return;
   }
 
-  std::filesystem::path path{file};
-
-  if (file.empty() || !std::filesystem::exists(path)) {
+  const std::filesystem::path path{file};
+  std::error_code ec;
+  if (file.empty() || !std::filesystem::exists(path, ec)) {
     std::cerr << "[AudioEngine] Sound file not found: " << path.string() << "\n";
     PlayClickTone();
     return;
