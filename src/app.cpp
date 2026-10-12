@@ -16,7 +16,7 @@
 namespace keywave {
 
 void App::PrintDeviceList() {
-  const auto devices = ListInputDevices();
+  const auto devices = device::ListInputDevices();
   if (devices.empty()) {
     std::cout << "No input devices accessible under /dev/input/.\n"
               << "Check that your user is in the 'input' group.\n";
@@ -26,11 +26,11 @@ void App::PrintDeviceList() {
   std::cout << "Available input devices:\n";
   for (const auto& dev : devices) {
     std::string_view type = "Other";
-    if (dev.isKeyboard && dev.isMouse) {
+    if (dev.is_keyboard && dev.is_mouse) {
       type = "Keyboard/Mouse";
-    } else if (dev.isKeyboard) {
+    } else if (dev.is_keyboard) {
       type = "Keyboard";
-    } else if (dev.isMouse) {
+    } else if (dev.is_mouse) {
       type = "Mouse";
     }
 
@@ -123,8 +123,8 @@ int App::Run(const Config& config) {
     return EXIT_FAILURE;
   }
 
-  const auto mouse_device = FindMouseDevice(config.GetMouseDevice());
-  const auto keyboard_device = FindKeyboardDevice(config.GetKeyboardDevice());
+  const auto mouse_device = device::FindMouseDevice(config.GetMouseDevice());
+  const auto keyboard_device = device::FindKeyboardDevice(config.GetKeyboardDevice());
   if (!mouse_device && !keyboard_device) {
     std::cerr << "No mouse or keyboard device found. Check that your user "
                  "is in the 'input' group.\n";

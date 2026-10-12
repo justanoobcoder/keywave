@@ -5,13 +5,15 @@
 #include "test_framework.hpp"
 
 extern bool TestDefaultConfigPath() {
-  const auto path = keywave::GetDefaultConfigPath();
+  keywave::Config config;
+  const auto path = config.GetDefaultConfigPath();
   TEST_ASSERT(!path.empty());
   TEST_ASSERT(path.filename() == "keywave.conf");
   return true;
 }
 
 extern bool TestLoadConfigFileValid() {
+  keywave::Config config;
   TempFile conf("keywave_test_valid.conf",
                 "# Test comment\n"
                 "volume = 0.65\n"
@@ -22,25 +24,26 @@ extern bool TestLoadConfigFileValid() {
                 "keyboard_device = Custom Keyboard Device\n"
                 "mouse_device = Custom Mouse Device\n");
 
-  const auto loaded = keywave::LoadConfigFile(conf.path);
+  const auto loaded = config.LoadConfigFile(conf.path);
   TEST_ASSERT(loaded.has_value());
   // NOLINTNEXTLINE(readability-simplify-boolean-expr)
-  TEST_ASSERT(loaded->volume >= 0.64F && loaded->volume <= 0.66F);
+  TEST_ASSERT(loaded->GetVolume() >= 0.64F && loaded->GetVolume() <= 0.66F);
   // NOLINTNEXTLINE(readability-simplify-boolean-expr)
-  TEST_ASSERT(loaded->keyboardVolume.has_value() && *loaded->keyboardVolume >= 0.79F &&
-              *loaded->keyboardVolume <= 0.81F);
+  TEST_ASSERT(loaded->IsKeyboardVolumSet() && loaded->GetKeyboardVolume() >= 0.79F &&
+              loaded->GetKeyboardVolume() <= 0.81F);
   // NOLINTNEXTLINE(readability-simplify-boolean-expr)
-  TEST_ASSERT(loaded->mouseVolume.has_value() && *loaded->mouseVolume >= 0.39F &&
-              *loaded->mouseVolume <= 0.41F);
-  TEST_ASSERT(loaded->keyboardPack == "/tmp/custom_keyboard");
-  TEST_ASSERT(loaded->mouseSound == "/tmp/custom_mouse.mp3");
-  TEST_ASSERT(loaded->keyboardDevice == "Custom Keyboard Device");
-  TEST_ASSERT(loaded->mouseDevice == "Custom Mouse Device");
-  TEST_ASSERT(loaded->configPath == conf.path);
+  TEST_ASSERT(loaded->IsMouseVolumSet() && loaded->GetMouseVolume() >= 0.39F &&
+              loaded->GetMouseVolume() <= 0.41F);
+  TEST_ASSERT(loaded->GetKeyboardPack() == "/tmp/custom_keyboard");
+  TEST_ASSERT(loaded->GetMouseSound() == "/tmp/custom_mouse.mp3");
+  TEST_ASSERT(loaded->GetKeyboardDevice() == "Custom Keyboard Device");
+  TEST_ASSERT(loaded->GetMouseDevice() == "Custom Mouse Device");
+  TEST_ASSERT(loaded->GetConfigPath() == conf.path);
   return true;
 }
 
 extern bool TestLoadConfigFileAliasesAndComments() {
+  keywave::Config config;
   TempFile conf("keywave_test_aliases.conf",
                 "; Semicolon comment\n"
                 "[section_header]\n"
@@ -50,19 +53,20 @@ extern bool TestLoadConfigFileAliasesAndComments() {
                 "mouse_dev = My Wireless Mouse\n"
                 "volume = 0.3\n");
 
-  const auto loaded = keywave::LoadConfigFile(conf.path);
+  const auto loaded = config.LoadConfigFile(conf.path);
   TEST_ASSERT(loaded.has_value());
   // NOLINTNEXTLINE(readability-simplify-boolean-expr)
-  TEST_ASSERT(loaded->volume >= 0.29F && loaded->volume <= 0.31F);
-  TEST_ASSERT(loaded->keyboardPack == "/opt/soundpacks/keyboard");
-  TEST_ASSERT(loaded->mouseSound == "/opt/sounds/mouse.wav");
-  TEST_ASSERT(loaded->keyboardDevice == "My USB Keyboard");
-  TEST_ASSERT(loaded->mouseDevice == "My Wireless Mouse");
+  TEST_ASSERT(loaded->GetVolume() >= 0.29F && loaded->GetVolume() <= 0.31F);
+  TEST_ASSERT(loaded->GetKeyboardPack() == "/opt/soundpacks/keyboard");
+  TEST_ASSERT(loaded->GetMouseSound() == "/opt/sounds/mouse.wav");
+  TEST_ASSERT(loaded->GetKeyboardDevice() == "My USB Keyboard");
+  TEST_ASSERT(loaded->GetMouseDevice() == "My Wireless Mouse");
   return true;
 }
 
 extern bool TestLoadConfigFileNonExistent() {
-  const auto loaded = keywave::LoadConfigFile("/path/to/definitely/non_existent_file.conf");
+  keywave::Config config;
+  const auto loaded = config.LoadConfigFile("/path/to/definitely/non_existent_file.conf");
   TEST_ASSERT(!loaded.has_value());
   return true;
 }
@@ -88,17 +92,17 @@ extern bool TestParseConfigCliOverrides() {
   const auto res = keywave::ParseConfig(static_cast<int>(argv.size()), argv.data());
   TEST_ASSERT(res.status == keywave::ParseStatus::kSuccess);
   // NOLINTNEXTLINE(readability-simplify-boolean-expr)
-  TEST_ASSERT(res.config.volume >= 0.89F && res.config.volume <= 0.91F);
+  TEST_ASSERT(res.config.GetVolume() >= 0.89F && res.config.GetVolume() <= 0.91F);
   // NOLINTNEXTLINE(readability-simplify-boolean-expr)
-  TEST_ASSERT(res.config.keyboardVolume.has_value() && *res.config.keyboardVolume >= 0.74F &&
-              *res.config.keyboardVolume <= 0.76F);
+  TEST_ASSERT(res.config.IsKeyboardVolumSet() && res.config.GetKeyboardVolume() >= 0.74F &&
+              res.config.GetKeyboardVolume() <= 0.76F);
   // NOLINTNEXTLINE(readability-simplify-boolean-expr)
-  TEST_ASSERT(res.config.mouseVolume.has_value() && *res.config.mouseVolume >= 0.34F &&
-              *res.config.mouseVolume <= 0.36F);
-  TEST_ASSERT(res.config.keyboardPack == "/cli/keyboard");
-  TEST_ASSERT(res.config.mouseSound == "/cli/mouse.wav");
-  TEST_ASSERT(res.config.keyboardDevice == "New Keyboard");
-  TEST_ASSERT(res.config.mouseDevice == "New Mouse");
+  TEST_ASSERT(res.config.IsMouseVolumSet() && res.config.GetMouseVolume() >= 0.34F &&
+              res.config.GetMouseVolume() <= 0.36F);
+  TEST_ASSERT(res.config.GetKeyboardPack() == "/cli/keyboard");
+  TEST_ASSERT(res.config.GetMouseSound() == "/cli/mouse.wav");
+  TEST_ASSERT(res.config.GetKeyboardDevice() == "New Keyboard");
+  TEST_ASSERT(res.config.GetMouseDevice() == "New Mouse");
   return true;
 }
 

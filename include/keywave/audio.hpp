@@ -15,7 +15,7 @@ class AudioEngine {
  public:
   AudioEngine();
 
-  ~AudioEngine() = default;
+  ~AudioEngine();
 
   AudioEngine(const AudioEngine&) = delete;
   AudioEngine& operator=(const AudioEngine&) = delete;
@@ -25,7 +25,7 @@ class AudioEngine {
 
   [[nodiscard]] bool Init();
   void Shutdown();
-  [[nodiscard]] bool IsReady() const noexcept { return impl_ && impl_->ready; }
+  [[nodiscard]] bool IsReady() const noexcept;
 
   void SetVolume(float volume);
   void SetChannelVolume(SoundChannel channel, float volume);
@@ -36,21 +36,7 @@ class AudioEngine {
   void PlaySound(std::string_view file, SoundChannel channel = SoundChannel::kKeyboard);
 
  private:
-  struct Impl {
-    ma_engine engine{};
-    ma_sound_group keyboardGroup{};
-    ma_sound_group mouseGroup{};
-    bool ready{false};
-
-    ~Impl() {
-      if (ready) {
-        ma_sound_group_uninit(&mouseGroup);
-        ma_sound_group_uninit(&keyboardGroup);
-        ma_engine_uninit(&engine);
-        ready = false;
-      }
-    }
-  };
+  struct Impl;
 
   std::unique_ptr<Impl> impl_;
 };

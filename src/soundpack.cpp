@@ -56,14 +56,11 @@ std::optional<SoundPack> SoundPack::Load(const std::filesystem::path& dir) {
   return pack;
 }
 
-std::optional<std::filesystem::path> SoundPack::SoundFor(int keyCode) const {
-  if (auto it = defines_.find(keyCode); it != defines_.end()) {
+std::optional<std::filesystem::path> SoundPack::SoundFor(int keycode) const {
+  if (auto it = defines_.find(keycode); it != defines_.end()) {
     return dir_ / it->second;
   }
-  // NOTE: default_sound_ ("sound.wav" in mechvibes packs) is a composite
-  // audio track containing all key sounds stitched together. It must NOT
-  // be used as a per-key fallback — doing so plays the entire track.
-  // Unmapped keys are intentionally silent.
+
   return std::nullopt;
 }
 

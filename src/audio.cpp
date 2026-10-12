@@ -9,7 +9,25 @@
 
 namespace keywave {
 
+struct AudioEngine::Impl {
+  ma_engine engine{};
+  ma_sound_group key_group{};
+  ma_sound_group mouse_group{};
+  bool ready{false};
+
+  ~Impl() {
+    if (ready) {
+      ma_sound_group_uninit(&mouse_group);
+      ma_sound_group_uninit(&key_group);
+      ma_engine_uninit(&engine);
+      ready = false;
+    }
+  }
+};
+
 AudioEngine::AudioEngine() : impl_(std::make_unique<Impl>()) {}
+
+AudioEngine::~AudioEngine() = default;
 
 bool AudioEngine::Init() {
   if (impl_->ready) {
@@ -21,15 +39,15 @@ bool AudioEngine::Init() {
     return false;
   }
 
-  result = ma_sound_group_init(&impl_->engine, 0, nullptr, &impl_->keyboardGroup);
+  result = ma_sound_group_init(&impl_->engine, 0, nullptr, &impl_->key_group);
   if (result != MA_SUCCESS) {
     ma_engine_uninit(&impl_->engine);
     return false;
   }
 
-  result = ma_sound_group_init(&impl_->engine, 0, nullptr, &impl_->mouseGroup);
+  result = ma_sound_group_init(&impl_->engine, 0, nullptr, &impl_->mouse_group);
   if (result != MA_SUCCESS) {
-    ma_sound_group_uninit(&impl_->keyboardGroup);
+    ma_sound_group_uninit(&impl_->key_group);
     ma_engine_uninit(&impl_->engine);
     return false;
   }
@@ -40,12 +58,14 @@ bool AudioEngine::Init() {
 
 void AudioEngine::Shutdown() {
   if (impl_->ready) {
-    ma_sound_group_uninit(&impl_->mouseGroup);
-    ma_sound_group_uninit(&impl_->keyboardGroup);
+    ma_sound_group_uninit(&impl_->mouse_group);
+    ma_sound_group_uninit(&impl_->key_group);
     ma_engine_uninit(&impl_->engine);
     impl_->ready = false;
   }
 }
+
+bool AudioEngine::IsReady() const noexcept { return impl_ && impl_->ready; }
 
 void AudioEngine::SetVolume(float volume) {
   if (impl_->ready) {
@@ -58,9 +78,9 @@ void AudioEngine::SetChannelVolume(SoundChannel channel, float volume) {
     return;
   }
   if (channel == SoundChannel::kKeyboard) {
-    ma_sound_group_set_volume(&impl_->keyboardGroup, volume);
+    ma_sound_group_set_volume(&impl_->key_group, volume);
   } else if (channel == SoundChannel::kMouse) {
-    ma_sound_group_set_volume(&impl_->mouseGroup, volume);
+    ma_sound_group_set_volume(&impl_->mouse_group, volume);
   }
 }
 
@@ -83,7 +103,7 @@ void AudioEngine::PlaySound(std::string_view file, SoundChannel channel) {
   }
 
   ma_sound_group* group =
-    (channel == SoundChannel::kKeyboard) ? &impl_->keyboardGroup : &impl_->mouseGroup;
+    (channel == SoundChannel::kKeyboard) ? &impl_->key_group : &impl_->mouse_group;
 
   if (ma_engine_play_sound(&impl_->engine, path.c_str(), group) != MA_SUCCESS) {
     std::cerr << "[AudioEngine] Failed to play sound: " << file << "\n";

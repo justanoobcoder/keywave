@@ -2,16 +2,16 @@
 #include "test_framework.hpp"
 
 extern bool TestDeviceDetectionSafeExecution() {
-  const auto devices = keywave::ListInputDevices();
+  const auto devices = keywave::device::ListInputDevices();
   (void)devices;
 
-  const auto mouse = keywave::FindMouseDevice();
-  const auto kb = keywave::FindKeyboardDevice();
+  const auto mouse = keywave::device::FindMouseDevice();
+  const auto kb = keywave::device::FindKeyboardDevice();
   (void)mouse;
   (void)kb;
 
   const auto kkb_non_matching =
-    keywave::FindKeyboardDevice("DefinitelyNotAnExistingKeyboardName123");
+    keywave::device::FindKeyboardDevice("DefinitelyNotAnExistingKeyboardName123");
   (void)kkb_non_matching;
   return true;
 }
