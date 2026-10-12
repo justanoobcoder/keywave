@@ -29,21 +29,21 @@ constexpr std::string_view kWhitespace = " \t\r\n";
   return str.substr(start, end - start + 1);
 }
 
-[[nodiscard]] path ExpandPath(std::string_view rawPath) {
-  if (rawPath.empty()) {
+[[nodiscard]] path ExpandPath(std::string_view raw_path) {
+  if (raw_path.empty()) {
     return {};
   }
-  if (rawPath.front() == '~') {
+  if (raw_path.front() == '~') {
     const char* home = std::getenv("HOME");
     if (home != nullptr) {
       path result(home);
-      if (rawPath.size() > 1 && (rawPath[1] == '/' || rawPath[1] == '\\')) {
-        result /= rawPath.substr(2);
+      if (raw_path.size() > 1 && (raw_path[1] == '/' || raw_path[1] == '\\')) {
+        result /= raw_path.substr(2);
       }
       return result;
     }
   }
-  return rawPath;
+  return raw_path;
 }
 
 [[nodiscard]] std::optional<float> ParseVolume(std::string_view str) {
@@ -73,7 +73,7 @@ constexpr std::string_view kWhitespace = " \t\r\n";
 
 }  // namespace
 
-path GetDefaultConfigPath() {
+path Config::GetDefaultConfigPath() {
   const char* xdg_config_home = std::getenv("XDG_CONFIG_HOME");
   if (xdg_config_home != nullptr && *xdg_config_home != '\0') {
     return path(xdg_config_home) / "keywave" / "keywave.conf";
@@ -87,14 +87,14 @@ path GetDefaultConfigPath() {
   return "keywave.conf";
 }
 
-std::optional<Config> LoadConfigFile(const path& path) {
+std::optional<Config> Config::LoadConfigFile(const path& path) {
   std::ifstream file(path);
   if (!file.is_open()) {
     return std::nullopt;
   }
 
   Config config;
-  config.configPath = path;
+  config.SetConfigPath(path);
 
   std::string line;
   std::size_t line_num = 0;
@@ -120,33 +120,33 @@ std::optional<Config> LoadConfigFile(const path& path) {
 
     if (key == "volume") {
       if (const auto vol = ParseVolume(value)) {
-        config.volume = *vol;
+        config.SetVolume(*vol);
       } else {
         std::cerr << "Invalid volume value '" << value << "' at line " << line_num << " in "
                   << path.string() << "\n";
       }
     } else if (key == "keyboard_volume" || key == "keyboard_vol") {
       if (const auto vol = ParseVolume(value)) {
-        config.keyboardVolume = vol;
+        config.SetKeyboardVolume(vol.value());
       } else {
         std::cerr << "Invalid keyboard volume value '" << value << "' at line " << line_num
                   << " in " << path.string() << "\n";
       }
     } else if (key == "mouse_volume" || key == "mouse_vol") {
       if (const auto vol = ParseVolume(value)) {
-        config.mouseVolume = vol;
+        config.SetMouseVolume(vol.value());
       } else {
         std::cerr << "Invalid mouse volume value '" << value << "' at line " << line_num << " in "
                   << path.string() << "\n";
       }
     } else if (key == "keyboard_soundpack" || key == "keyboard_pack" || key == "soundpack") {
-      config.keyboardPack = ExpandPath(value);
+      config.SetKeyboardPack(ExpandPath(value));
     } else if (key == "mouse_sound" || key == "mouse_soundpack" || key == "mouse") {
-      config.mouseSound = ExpandPath(value);
+      config.SetMouseSound(ExpandPath(value));
     } else if (key == "keyboard_device" || key == "keyboard_dev" || key == "keyboard") {
-      config.keyboardDevice = std::string(value);
+      config.SetKeyboardDevice(std::string(value));
     } else if (key == "mouse_device" || key == "mouse_dev") {
-      config.mouseDevice = std::string(value);
+      config.SetMouseDevice(std::string(value));
     } else {
       std::cerr << "Unknown configuration key '" << key << "' at line " << line_num << " in "
                 << path.string() << "\n";
@@ -156,8 +156,8 @@ std::optional<Config> LoadConfigFile(const path& path) {
   return config;
 }
 
-void PrintUsage(std::string_view programName) {
-  std::cout << "Usage: " << programName << " [OPTIONS]\n\n"
+void Config::PrintUsage(std::string_view name) {
+  std::cout << "Usage: " << name << " [OPTIONS]\n\n"
             << "Options:\n"
             << "  -c, --config <path>             Path to configuration file\n"
             << "  -v, --volume <float>            Master audio playback volume (e.g. "
@@ -180,7 +180,7 @@ void PrintUsage(std::string_view programName) {
             << "Default config file location: $XDG_CONFIG_HOME/keywave/keywave.conf\n";
 }
 
-void PrintVersion() {
+void Config::PrintVersion() {
   std::cout << "keywave v" << kAppVersion << " (build: " << kGitCommit << ", " << kBuildDate
             << ")\n";
 }
@@ -262,24 +262,24 @@ ParseResult ParseConfig(int argc, char* const argv[]) {
       case 'l':
         return ParseResult{ParseStatus::kListDevicesRequested, {}};
       case 'V':
-        PrintVersion();
+        Config::PrintVersion();
         return ParseResult{ParseStatus::kVersionRequested, {}};
       case 'h':
-        PrintUsage(argv[0]);
+        Config::PrintUsage(argv[0]);
         return ParseResult{ParseStatus::kHelpRequested, {}};
       default:
-        PrintUsage(argv[0]);
+        Config::PrintUsage(argv[0]);
         return ParseResult{ParseStatus::kError, {}};
     }
   }
 
-  const path config_path_to_load =
-    !custom_config_path.empty() ? custom_config_path : GetDefaultConfigPath();
-
   Config config;
+  const path config_path_to_load =
+    !custom_config_path.empty() ? custom_config_path : config.GetDefaultConfigPath();
+
   std::error_code ec;
   if (std::filesystem::exists(config_path_to_load, ec)) {
-    if (auto loaded = LoadConfigFile(config_path_to_load)) {
+    if (auto loaded = config.LoadConfigFile(config_path_to_load)) {
       config = std::move(*loaded);
       std::cout << "Loaded configuration from " << config_path_to_load.string() << "\n";
     } else {
@@ -291,26 +291,26 @@ ParseResult ParseConfig(int argc, char* const argv[]) {
     return ParseResult{ParseStatus::kError, {}};
   }
 
-  if (cli_volume) {
-    config.volume = *cli_volume;
+  if (cli_volume.has_value()) {
+    config.SetVolume(*cli_volume);
   }
-  if (cli_keyboard_volume) {
-    config.keyboardVolume = cli_keyboard_volume;
+  if (cli_keyboard_volume.has_value()) {
+    config.SetKeyboardVolume(*cli_keyboard_volume);
   }
-  if (cli_mouse_volume) {
-    config.mouseVolume = cli_mouse_volume;
+  if (cli_mouse_volume.has_value()) {
+    config.SetMouseVolume(*cli_mouse_volume);
   }
-  if (cli_keyboard_pack) {
-    config.keyboardPack = std::move(*cli_keyboard_pack);
+  if (cli_keyboard_pack.has_value()) {
+    config.SetKeyboardPack(std::move(*cli_keyboard_pack));
   }
-  if (cli_mouse_sound) {
-    config.mouseSound = std::move(*cli_mouse_sound);
+  if (cli_mouse_sound.has_value()) {
+    config.SetMouseSound(std::move(*cli_mouse_sound));
   }
-  if (cli_keyboard_device) {
-    config.keyboardDevice = std::move(*cli_keyboard_device);
+  if (cli_keyboard_device.has_value()) {
+    config.SetKeyboardDevice(std::move(*cli_keyboard_device));
   }
-  if (cli_mouse_device) {
-    config.mouseDevice = std::move(*cli_mouse_device);
+  if (cli_mouse_device.has_value()) {
+    config.SetMouseDevice(std::move(*cli_mouse_device));
   }
 
   return ParseResult{ParseStatus::kSuccess, std::move(config)};

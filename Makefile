@@ -10,7 +10,8 @@ INCLUDES = -Iinclude
 
 VERSION_HPP = include/keywave/version.hpp
 
-SRCS = src/audio.cpp \
+SRCS = src/app.cpp \
+       src/audio.cpp \
        src/config.cpp \
        src/device.cpp \
        src/soundpack.cpp
