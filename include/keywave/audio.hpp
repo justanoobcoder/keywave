@@ -25,7 +25,7 @@ class AudioEngine {
 
   [[nodiscard]] bool Init();
   void Shutdown();
-  [[nodiscard]] bool IsReady() const noexcept { return impl_->ready; };
+  [[nodiscard]] bool IsReady() const noexcept { return impl_ && impl_->ready; }
 
   void SetVolume(float volume);
   void SetChannelVolume(SoundChannel channel, float volume);
