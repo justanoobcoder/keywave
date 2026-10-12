@@ -2,9 +2,12 @@
 
 #include <fcntl.h>
 #include <linux/input.h>
+#include <poll.h>
+#include <sys/eventfd.h>
 #include <unistd.h>
 
 #include <csignal>
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
@@ -14,6 +17,101 @@
 #include "keywave/device.hpp"
 
 namespace keywave {
+
+namespace {
+
+std::atomic<int> g_stop_fd{-1};
+
+void SignalHandler(int) { App::Stop(); }
+
+template <typename Callback>
+void RunDeviceEventListener(const std::filesystem::path& device, Callback&& on_key_down) {
+  const int fd = open(device.c_str(), O_RDONLY | O_NONBLOCK);
+  if (fd < 0) {
+    std::cerr << "Failed to open " << device.string() << ": " << std::strerror(errno) << "\n";
+    return;
+  }
+
+  const int stop_fd = g_stop_fd.load(std::memory_order_relaxed);
+
+  while (App::IsRunning()) {
+    struct pollfd fds[2];
+    nfds_t nfds = 1;
+    fds[0].fd = fd;
+    fds[0].events = POLLIN;
+    fds[0].revents = 0;
+
+    if (stop_fd >= 0) {
+      fds[1].fd = stop_fd;
+      fds[1].events = POLLIN;
+      fds[1].revents = 0;
+      nfds = 2;
+    }
+
+    const int timeout_ms = (stop_fd >= 0) ? -1 : 100;
+    const int ret = poll(fds, nfds, timeout_ms);
+    if (ret < 0) {
+      if (errno == EINTR) {
+        continue;
+      }
+      std::cerr << "poll error on " << device.string() << ": " << std::strerror(errno) << "\n";
+      break;
+    }
+
+    if (!App::IsRunning()) {
+      break;
+    }
+
+    if (stop_fd >= 0 && (fds[1].revents & POLLIN)) {
+      break;
+    }
+
+    if (fds[0].revents & (POLLERR | POLLHUP | POLLNVAL)) {
+      std::cerr << "Device disconnected: " << device.string() << "\n";
+      break;
+    }
+
+    if (fds[0].revents & POLLIN) {
+      struct input_event ev{};
+      while (App::IsRunning()) {
+        const ssize_t n = read(fd, &ev, sizeof(ev));
+        if (std::cmp_equal(n, sizeof(ev))) {
+          if (ev.type == EV_KEY && ev.value == 1) {
+            on_key_down(ev.code);
+          }
+        } else {
+          if (n < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+            break;
+          }
+          if (n < 0 && errno == EINTR) {
+            continue;
+          }
+          if (n < 0 && errno == ENODEV) {
+            std::cerr << "Device removed: " << device.string() << "\n";
+            close(fd);
+            return;
+          }
+          break;
+        }
+      }
+    }
+  }
+
+  close(fd);
+}
+
+}  // namespace
+
+void App::Stop() {
+  running_.store(false, std::memory_order_relaxed);
+  const int sfd = g_stop_fd.load(std::memory_order_relaxed);
+  if (sfd >= 0) {
+    const uint64_t val = 1;
+    [[maybe_unused]] auto res = write(sfd, &val, sizeof(val));
+  }
+}
+
+bool App::IsRunning() noexcept { return running_.load(std::memory_order_relaxed); }
 
 void App::PrintDeviceList() {
   const auto devices = device::ListInputDevices();
@@ -41,50 +139,19 @@ void App::PrintDeviceList() {
 
 void App::RunMouseListener(const std::filesystem::path& device,
                            const std::filesystem::path& sound_path, AudioEngine& audio) {
-  const int fd = open(device.c_str(), O_RDONLY | O_NONBLOCK);
-  if (fd < 0) {
-    std::cerr << "Failed to open " << device.string() << ": " << std::strerror(errno) << "\n";
-    return;
-  }
-
   const std::string sound_file = sound_path.string();
-  struct input_event ev;
-  while (running_) {
-    const ssize_t n = read(fd, &ev, sizeof(ev));
-    if (std::cmp_equal(n, sizeof(ev))) {
-      if (ev.type == EV_KEY && ev.value == 1) {
-        audio.PlaySound(sound_file, SoundChannel::kMouse);
-      }
-    } else {
-      usleep(1000);
-    }
-  }
-  close(fd);
+  RunDeviceEventListener(
+    device, [&](uint16_t /*code*/) { audio.PlaySound(sound_file, SoundChannel::kMouse); });
 }
 
 void App::RunKeyboardListener(const std::filesystem::path& device, const SoundPack& soundpack,
                               AudioEngine& audio) {
-  const int fd = open(device.c_str(), O_RDONLY | O_NONBLOCK);
-  if (fd < 0) {
-    std::cerr << "Failed to open " << device.string() << ": " << std::strerror(errno) << "\n";
-    return;
-  }
-
-  struct input_event ev;
-  while (running_) {
-    const ssize_t n = read(fd, &ev, sizeof(ev));
-    if (std::cmp_equal(n, sizeof(ev))) {
-      if (ev.type == EV_KEY && ev.value == 1) {
-        const auto sound_path = soundpack.SoundFor(ev.code);
-        if (sound_path) {
-          audio.PlaySound(sound_path->string(), SoundChannel::kKeyboard);
-        }
-      }
-    } else {
-      usleep(1000);
+  RunDeviceEventListener(device, [&](uint16_t code) {
+    const auto sound_path = soundpack.SoundFor(code);
+    if (sound_path) {
+      audio.PlaySound(sound_path->string(), SoundChannel::kKeyboard);
     }
-  }
-  close(fd);
+  });
 }
 
 bool App::ConfigureAudio(const Config& config, AudioEngine& audio) {
@@ -131,8 +198,13 @@ int App::Run(const Config& config) {
     return EXIT_FAILURE;
   }
 
-  std::signal(SIGINT, [](int) { running_ = false; });
-  std::signal(SIGTERM, [](int) { running_ = false; });
+  running_.store(true, std::memory_order_relaxed);
+
+  const int stop_fd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
+  g_stop_fd.store(stop_fd, std::memory_order_relaxed);
+
+  std::signal(SIGINT, SignalHandler);
+  std::signal(SIGTERM, SignalHandler);
 
   std::thread mouse_thread;
   if (mouse_device) {
@@ -156,6 +228,11 @@ int App::Run(const Config& config) {
   }
   if (keyboard_thread.joinable()) {
     keyboard_thread.join();
+  }
+
+  if (stop_fd >= 0) {
+    close(stop_fd);
+    g_stop_fd.store(-1, std::memory_order_relaxed);
   }
 
   return EXIT_SUCCESS;

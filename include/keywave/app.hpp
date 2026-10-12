@@ -22,6 +22,8 @@ class App {
   bool ConfigureAudio(const Config& config, AudioEngine& audio);
   void PrintBanner(const Config& config);
   int Run(const Config& config);
+  static void Stop();
+  [[nodiscard]] static bool IsRunning() noexcept;
 
  private:
   static inline std::atomic<bool> running_{true};
