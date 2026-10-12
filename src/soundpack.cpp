@@ -48,7 +48,7 @@ std::optional<SoundPack> SoundPack::Load(const std::filesystem::path& dir) {
       std::cerr << "Skipping non-numeric key in defines: \"" << code_str << "\"\n";
       continue;
     }
-    pack.defines_.emplace(code, filename.get<std::string>());
+    pack.defines_.emplace(code, dir / filename.get<std::string>());
   }
 
   std::cout << "Loaded soundpack \"" << pack.name_ << "\" (" << pack.defines_.size()
@@ -58,10 +58,23 @@ std::optional<SoundPack> SoundPack::Load(const std::filesystem::path& dir) {
 
 std::optional<std::filesystem::path> SoundPack::SoundFor(int keycode) const {
   if (auto it = defines_.find(keycode); it != defines_.end()) {
-    return dir_ / it->second;
+    return it->second;
   }
 
   return std::nullopt;
+}
+
+std::vector<std::filesystem::path> SoundPack::AllSoundPaths() const {
+  std::vector<std::filesystem::path> paths;
+  if (!defines_.empty()) {
+    paths.reserve(defines_.size());
+    for (const auto& [code, path] : defines_) {
+      paths.push_back(path);
+    }
+  } else if (default_sound_.has_value()) {
+    paths.push_back(dir_ / *default_sound_);
+  }
+  return paths;
 }
 
 }  // namespace keywave

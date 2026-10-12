@@ -190,6 +190,11 @@ int App::Run(const Config& config) {
     return EXIT_FAILURE;
   }
 
+  for (const auto& sound_path : soundpack->AllSoundPaths()) {
+    audio.PreloadSound(sound_path.string());
+  }
+  audio.PreloadSound(config.GetMouseSound().string());
+
   const auto mouse_device = device::FindMouseDevice(config.GetMouseDevice());
   const auto keyboard_device = device::FindKeyboardDevice(config.GetKeyboardDevice());
   if (!mouse_device && !keyboard_device) {

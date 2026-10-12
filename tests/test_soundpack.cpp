@@ -27,6 +27,9 @@ extern bool TestSoundpackLoadValid() {
 
   const auto sound_unmapped = soundpack->SoundFor(999);
   TEST_ASSERT(!sound_unmapped.has_value());
+
+  const auto all_paths = soundpack->AllSoundPaths();
+  TEST_ASSERT(all_paths.size() == 2);
   return true;
 }
 

@@ -33,6 +33,7 @@ class AudioEngine {
   void PlayClickTone(float freq_hz = 1200.0F,
                      std::chrono::duration<float> duration = std::chrono::milliseconds(30));
 
+  bool PreloadSound(std::string_view file);
   void PlaySound(std::string_view file, SoundChannel channel = SoundChannel::kKeyboard);
 
  private:
