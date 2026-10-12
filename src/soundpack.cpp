@@ -1,7 +1,9 @@
 #include "keywave/soundpack.hpp"
 
+#include <charconv>
 #include <fstream>
 #include <iostream>
+#include <string>
 
 #include <nlohmann/json.hpp>
 
@@ -16,11 +18,9 @@ std::optional<SoundPack> SoundPack::Load(const std::filesystem::path& dir) {
     return std::nullopt;
   }
 
-  nlohmann::json j;
-  try {
-    file >> j;
-  } catch (const nlohmann::json::parse_error& e) {
-    std::cerr << "Failed to parse " << config_path.string() << ": " << e.what() << "\n";
+  const nlohmann::json j = nlohmann::json::parse(file, nullptr, false);
+  if (j.is_discarded()) {
+    std::cerr << "Failed to parse " << config_path.string() << "\n";
     return std::nullopt;
   }
 
@@ -37,14 +37,18 @@ std::optional<SoundPack> SoundPack::Load(const std::filesystem::path& dir) {
     pack.default_sound_ = j["sound"].get<std::string>();
   }
 
-  for (const auto& [codeStr, filename] : j["defines"].items()) {
-    if (!filename.is_string()) continue;
-    try {
-      const int code = std::stoi(codeStr);
-      pack.defines_.emplace(code, filename.get<std::string>());
-    } catch (const std::exception&) {
-      std::cerr << "Skipping non-numeric key in defines: \"" << codeStr << "\"\n";
+  for (const auto& [code_str, filename] : j["defines"].items()) {
+    if (!filename.is_string()) {
+      continue;
     }
+    int code = 0;
+    const auto [ptr, ec] =
+      std::from_chars(code_str.data(), code_str.data() + code_str.size(), code);
+    if (ec != std::errc{} || ptr != code_str.data() + code_str.size()) {
+      std::cerr << "Skipping non-numeric key in defines: \"" << code_str << "\"\n";
+      continue;
+    }
+    pack.defines_.emplace(code, filename.get<std::string>());
   }
 
   std::cout << "Loaded soundpack \"" << pack.name_ << "\" (" << pack.defines_.size()
