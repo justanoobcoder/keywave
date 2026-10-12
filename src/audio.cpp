@@ -9,28 +9,7 @@
 
 namespace keywave {
 
-struct AudioEngine::Impl {
-  ma_engine engine{};
-  ma_sound_group keyboardGroup{};
-  ma_sound_group mouseGroup{};
-  bool ready{false};
-
-  ~Impl() {
-    if (ready) {
-      ma_sound_group_uninit(&mouseGroup);
-      ma_sound_group_uninit(&keyboardGroup);
-      ma_engine_uninit(&engine);
-      ready = false;
-    }
-  }
-};
-
 AudioEngine::AudioEngine() : impl_(std::make_unique<Impl>()) {}
-
-AudioEngine::~AudioEngine() = default;
-
-AudioEngine::AudioEngine(AudioEngine&&) noexcept = default;
-AudioEngine& AudioEngine::operator=(AudioEngine&&) noexcept = default;
 
 bool AudioEngine::Init() {
   if (impl_->ready) {
@@ -68,8 +47,6 @@ void AudioEngine::Shutdown() {
   }
 }
 
-bool AudioEngine::IsReady() const noexcept { return impl_->ready; }
-
 void AudioEngine::SetVolume(float volume) {
   if (impl_->ready) {
     ma_engine_set_volume(&impl_->engine, volume);
@@ -87,20 +64,19 @@ void AudioEngine::SetChannelVolume(SoundChannel channel, float volume) {
   }
 }
 
-void AudioEngine::PlayClickTone(float frequencyHz, std::chrono::duration<float> duration) {
-  (void)frequencyHz;
-  (void)duration;
+// TODO: play a default sound
+void AudioEngine::PlayClickTone(float, std::chrono::duration<float>) {
   std::cerr << "[AudioEngine] No playable sound available for this click.\n";
 }
 
-void AudioEngine::PlaySound(std::string_view soundFile, SoundChannel channel) {
+void AudioEngine::PlaySound(std::string_view file, SoundChannel channel) {
   if (!impl_->ready) {
     return;
   }
 
-  std::filesystem::path path{soundFile};
+  std::filesystem::path path{file};
 
-  if (soundFile.empty() || !std::filesystem::exists(path)) {
+  if (file.empty() || !std::filesystem::exists(path)) {
     std::cerr << "[AudioEngine] Sound file not found: " << path.string() << "\n";
     PlayClickTone();
     return;
@@ -110,7 +86,7 @@ void AudioEngine::PlaySound(std::string_view soundFile, SoundChannel channel) {
     (channel == SoundChannel::kKeyboard) ? &impl_->keyboardGroup : &impl_->mouseGroup;
 
   if (ma_engine_play_sound(&impl_->engine, path.c_str(), group) != MA_SUCCESS) {
-    std::cerr << "[AudioEngine] Failed to play sound: " << soundFile << "\n";
+    std::cerr << "[AudioEngine] Failed to play sound: " << file << "\n";
   }
 }
 
