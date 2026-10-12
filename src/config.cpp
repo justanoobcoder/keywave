@@ -3,10 +3,12 @@
 #include <getopt.h>
 
 #include <cstdlib>
+#include <charconv>
 #include <fstream>
 #include <iostream>
 #include <string>
 #include <string_view>
+#include <system_error>
 
 #include "keywave/version.hpp"
 
@@ -45,22 +47,28 @@ constexpr std::string_view kWhitespace = " \t\r\n";
 }
 
 [[nodiscard]] std::optional<float> ParseVolume(std::string_view str) {
-  std::string s(Trim(str));
-  try {
-    std::size_t idx = 0;
-    const float val = std::stof(s, &idx);
-    if (idx != s.size()) {
-      return std::nullopt;
-    }
-
-    if (val < 0.0F) {
-      std::cerr << "Volume cannot be negative: " << str << "\n";
-      return std::nullopt;
-    }
-    return val;
-  } catch (const std::exception&) {
+  std::string_view s = Trim(str);
+  if (s.empty()) {
     return std::nullopt;
   }
+  if (s.front() == '+') {
+    s.remove_prefix(1);
+  }
+  if (s.empty()) {
+    return std::nullopt;
+  }
+
+  float val = 0.0F;
+  const auto [ptr, ec] = std::from_chars(s.data(), s.data() + s.size(), val);
+  if (ec != std::errc{} || ptr != s.data() + s.size()) {
+    return std::nullopt;
+  }
+
+  if (val < 0.0F) {
+    std::cerr << "Volume cannot be negative: " << str << "\n";
+    return std::nullopt;
+  }
+  return val;
 }
 
 }  // namespace
@@ -269,7 +277,8 @@ ParseResult ParseConfig(int argc, char* const argv[]) {
     !custom_config_path.empty() ? custom_config_path : GetDefaultConfigPath();
 
   Config config;
-  if (std::filesystem::exists(config_path_to_load)) {
+  std::error_code ec;
+  if (std::filesystem::exists(config_path_to_load, ec)) {
     if (auto loaded = LoadConfigFile(config_path_to_load)) {
       config = std::move(*loaded);
       std::cout << "Loaded configuration from " << config_path_to_load.string() << "\n";
