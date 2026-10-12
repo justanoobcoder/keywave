@@ -4,7 +4,7 @@ VERSION    := $(shell cat VERSION 2>/dev/null || echo "0.0.0")
 GIT_COMMIT ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 BUILD_DATE := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-CXXFLAGS = -O2 -std=c++20 -Wall -Wextra
+CXXFLAGS = -O2 -std=c++20 -Wall -Wextra -fno-exceptions
 LDFLAGS = -lpthread -lm
 INCLUDES = -Iinclude
 
